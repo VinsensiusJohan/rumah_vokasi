@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rumah_vokasi/core/app_button_style.dart';
 import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
-import 'package:rumah_vokasi/features/auth/presentasions/login_register_page.dart';
+import 'package:rumah_vokasi/features/auth/presentasions/pages/login_register_page.dart';
 
 class OptionlrPage extends StatelessWidget {
   const OptionlrPage({super.key});

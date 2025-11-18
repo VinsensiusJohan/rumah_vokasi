@@ -83,6 +83,14 @@ class _QuizPageState extends State<QuizPage> {
   Map<String, bool> markedQuestions = {};
   bool isExpanded = false;
 
+  bool isQuestionAnswered(String questionId) {
+    return selectedAnswers[questionId] != null; // sudah pilih jawaban
+  }
+
+  bool isQuestionMarked(String questionId) {
+    return markedQuestions[questionId] == true; // ditandai
+  }
+
   @override
   void initState() {
     super.initState();
@@ -508,27 +516,44 @@ class _QuizPageState extends State<QuizPage> {
                 ),
               ),
             ),
+
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
             top: MediaQuery.of(context).size.height / 2 - 25,
             right: isExpanded ? MediaQuery.of(context).size.width * 3 / 5 : 0,
             child: GestureDetector(
               onTap: () => setState(() => isExpanded = !isExpanded),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
                   color: Colors.blue,
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(25),
                     bottomLeft: Radius.circular(25),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: Icon(
-                  isExpanded
-                      ? Icons.chevron_right_outlined
-                      : Icons.chevron_left_outlined,
-                  color: Colors.white,
+
+                // === Rotating Arrow ===
+                child: AnimatedRotation(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  turns: isExpanded ? 0.5 : 0.0,
+                  child: const Icon(
+                    Icons.chevron_left_outlined,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
               ),
             ),
@@ -536,66 +561,154 @@ class _QuizPageState extends State<QuizPage> {
 
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
-            right: 0,
+            curve: Curves.easeInOut,
+            right: isExpanded ? 0 : -MediaQuery.of(context).size.width * 3 / 5,
             top: 0,
             bottom: 0,
-            width: isExpanded ? MediaQuery.of(context).size.width * 3 / 5 : 0,
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              width: MediaQuery.of(context).size.width * 3 / 5,
               decoration: BoxDecoration(color: Colors.white),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 60),
-                    Align(
-                      alignment: AlignmentGeometry.center,
-                      child: Image.asset(
-                        'assets/images/Primary-Logo.png',
-                        width: 90,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.grey.shade100,
-                          width: 2,
+              child: ClipRect(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  opacity: isExpanded ? 1 : 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 60),
+                        Align(
+                          alignment: Alignment.center,
+                          child: Image.asset(
+                            'assets/images/Primary-Logo.png',
+                            width: 90,
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                      ),
-                      child: Wrap(
-                        spacing: 15, // jarak antar kotak horizontal
-                        runSpacing: 15, // jarak antar baris
-                        children: List.generate(10, (index) {
-                          return GestureDetector(
-                            onTap: () {
-                              // nanti diisi untuk navigasi soal
-                            },
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade600,
-                                borderRadius: BorderRadius.circular(10),
+                        const SizedBox(height: 30),
+
+                        // ==== Navigasi Soal ====
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.grey.shade100,
+                              width: 2,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Navigasi Soal",
+                                style: AppTextStyle.popins16.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                              child: Center(
-                                child: Text(
-                                  "${index + 1}",
-                                  style: AppTextStyle.inter14.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
+                              const SizedBox(height: 10),
+
+                              Wrap(
+                                spacing: 15,
+                                runSpacing: 15,
+                                children: List.generate(questions.length, (
+                                  index,
+                                ) {
+                                  final qId = questions[index]["question_id"];
+
+                                  final bool answered = isQuestionAnswered(qId);
+                                  final bool marked = isQuestionMarked(qId);
+
+                                  Color bgColor;
+                                  Color textColor;
+
+                                  if (marked) {
+                                    bgColor = AppColor.yellow;
+                                    textColor = Colors.white;
+                                  } else if (answered) {
+                                    bgColor = AppColor.primaryBlue;
+                                    textColor = Colors.white;
+                                  } else {
+                                    bgColor = Colors.white;
+                                    textColor = AppColor.primaryBlue;
+                                  }
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      _pageController.animateToPage(
+                                        index,
+                                        duration: const Duration(
+                                          milliseconds: 300,
+                                        ),
+                                        curve: Curves.easeInOut,
+                                      );
+                                      setState(() {
+                                        _currentIndex = index;
+                                        isExpanded = false;
+                                      });
+                                    },
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: bgColor,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: marked
+                                              ? AppColor.yellow
+                                              : AppColor.primaryBlue,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          "${index + 1}",
+                                          style: AppTextStyle.inter14.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            color: textColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: ElevatedButton(
+                                  onPressed: () {},
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColor.primaryBlue,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 2,
+                                      horizontal: 20,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    "Selesai",
+                                    style: AppTextStyle.popins12wBold.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          );
-                        }),
-                      ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

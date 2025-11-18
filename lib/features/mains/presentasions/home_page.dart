@@ -13,7 +13,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _indexPages = 1;
+  int _indexPages = 0;
 
   final List<Widget> _pages = const [
     HpBeranda(),

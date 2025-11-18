@@ -6,7 +6,7 @@ import 'dart:async';
 
 import 'package:rumah_vokasi/core/app_text_style.dart';
 import 'package:flutter/gestures.dart';
-import 'package:rumah_vokasi/features/auth/presentasions/eula_page.dart';
+import 'package:rumah_vokasi/features/auth/presentasions/pages/eula_page.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -170,7 +170,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
               padding: const EdgeInsets.all(10.0),
               child: Column(
                 children: [
-                  // Bagian teks utama dimulai dari tengah
                   Expanded(
                     child: Align(
                       alignment: Alignment(
@@ -223,8 +222,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                     ),
                   ),
                   const SizedBox(height: 10),
-
-                  // Bagian EULA di paling bawah
                   SizedBox(
                     width: 300,
                     child: RichText(

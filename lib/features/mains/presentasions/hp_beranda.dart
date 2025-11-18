@@ -6,6 +6,7 @@ import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_form_style.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
 import 'package:rumah_vokasi/utils/app_formater.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../utils/dummy_data.dart';
 
 class HpBeranda extends StatefulWidget {
@@ -19,17 +20,25 @@ class _HpBerandaState extends State<HpBeranda> {
   final TextEditingController _search = TextEditingController();
   final CarouselSliderController _carouselController =
       CarouselSliderController();
-
-  int _currentIndex = 0;
   final List<String> imgList = [
     'assets/images/eula-slide-1.png',
     'assets/images/eula-slide-1.png',
     'assets/images/eula-slide-1.png',
   ];
 
+  int _currentIndex = 0;
   int _selectedCategory = 0;
 
   late List<bool> isBookMarkList;
+
+  String? name;
+
+  Future<void> loadUserFromSP() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+    name = prefs.getString("name");
+    });
+  }
 
   @override
   void dispose() {
@@ -40,6 +49,7 @@ class _HpBerandaState extends State<HpBeranda> {
   @override
   void initState() {
     super.initState();
+    loadUserFromSP();
     isBookMarkList = List.generate(courses.length, (_) => false);
   }
 
@@ -60,10 +70,10 @@ class _HpBerandaState extends State<HpBeranda> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Halo", style: AppTextStyle.default16w6),
+                          Text("Halo", style: AppTextStyle.popins14.copyWith(fontWeight: FontWeight.w500)),
                           Text(
-                            "Vinsensius Johan",
-                            style: AppTextStyle.popins22w5,
+                            name!,
+                            style: AppTextStyle.popins20wBold.copyWith(fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),

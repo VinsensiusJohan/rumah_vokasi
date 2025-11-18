@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rumah_vokasi/core/config/custom_scroll.dart';
-import 'package:rumah_vokasi/features/course/presentasions/quiz_page.dart';
+import 'package:rumah_vokasi/features/auth/presentasions/pages/login_register_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
           surface: Colors.white,
         ),
       ),
-      home: QuizPage(),
+      home: LoginRegisterPage(),
     );
   }
 }

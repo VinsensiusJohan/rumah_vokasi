@@ -3,7 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:rumah_vokasi/core/app_button_style.dart';
 import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
-import 'package:rumah_vokasi/features/auth/presentasions/optionlr_page.dart';
+import 'package:rumah_vokasi/features/auth/presentasions/pages/optionlr_page.dart';
 
 class EulaPage extends StatefulWidget {
   const EulaPage({super.key});
