@@ -7,9 +7,32 @@ import 'package:rumah_vokasi/features/mains/presentasions/pp_certificate.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_changepw_page.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_history_page.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_profile_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class HpProfile extends StatelessWidget {
+class HpProfile extends StatefulWidget {
   const HpProfile({super.key});
+
+  @override
+  State<HpProfile> createState() => _HpProfileState();
+}
+
+class _HpProfileState extends State<HpProfile> {
+  String? name;
+  String? email;
+
+  Future<void> loadUserFromSP() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      name = prefs.getString("name");
+      email = prefs.getString("email");
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserFromSP();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,18 +96,33 @@ class HpProfile extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            "Manusia Bumi Setengah Alien",
-            textAlign: TextAlign.center,
-            style: AppTextStyle.popins18.copyWith(fontWeight: FontWeight.w800),
-          ),
-          Text(
-            "setAliensetManusia@gmail.com",
-            textAlign: TextAlign.center,
-            style: AppTextStyle.popins16.copyWith(
-              fontWeight: FontWeight.w500,
-              color: AppColor.textGrey,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      name ?? "",
+                      textAlign: TextAlign.center,
+                      style: AppTextStyle.popins18.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    Text(
+                      email ?? "",
+                      textAlign: TextAlign.center,
+                      style: AppTextStyle.popins16.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: AppColor.textGrey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           Material(
             color: Colors.transparent,
@@ -98,7 +136,10 @@ class HpProfile extends StatelessWidget {
               child: Container(
                 height: 120,
                 width: 350,
-                margin: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+                margin: const EdgeInsets.symmetric(
+                  vertical: 15,
+                  horizontal: 30,
+                ),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(25),

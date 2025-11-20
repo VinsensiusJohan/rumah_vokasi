@@ -6,7 +6,8 @@ import 'package:rumah_vokasi/features/mains/presentasions/hp_packet.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/hp_profile.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final int index;
+  const HomePage({super.key, required this.index});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -20,6 +21,12 @@ class _HomePageState extends State<HomePage> {
     HpPacket(),
     HpProfile()
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _indexPages = widget.index;
+  }
 
   @override
   Widget build(BuildContext context) {

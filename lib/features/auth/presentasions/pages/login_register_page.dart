@@ -112,7 +112,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => HomePage()),
+        MaterialPageRoute(builder: (_) => HomePage(index: 0,)),
       );
     } catch (e) {
       debugPrint("Error $e");
