@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:quickalert/quickalert.dart';
 import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
+import 'package:rumah_vokasi/features/auth/presentasions/pages/login_register_page.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_bookmark_page.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_certificate.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_changepw_page.dart';
@@ -26,6 +28,35 @@ class _HpProfileState extends State<HpProfile> {
       name = prefs.getString("name");
       email = prefs.getString("email");
     });
+  }
+
+  void logoutUser() {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.warning,
+      title: "Logout",
+      text: "Apakah anda ingin logout ?",
+      confirmBtnText: "OK",
+      confirmBtnColor: Colors.green,
+      showConfirmBtn: true,
+      onConfirmBtnTap: () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LoginRegisterPage(initialLogin: true),
+          ),
+        );
+      },
+      showCancelBtn: true,
+      cancelBtnText: "Cancel",
+      cancelBtnTextStyle: TextStyle(color: Colors.red),
+      onCancelBtnTap: () {
+        return;
+      },
+    );
   }
 
   @override
@@ -262,7 +293,9 @@ class _HpProfileState extends State<HpProfile> {
                   iconColor: Colors.red,
                   titleColor: Colors.red.shade300,
                   subColor: Colors.red.shade400,
-                  onTap: () {},
+                  onTap: () {
+                    logoutUser();
+                  },
                 ),
               ],
             ),

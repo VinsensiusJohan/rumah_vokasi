@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -7,9 +6,8 @@ import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_form_style.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
 import 'package:rumah_vokasi/features/mains/models/enrollment_model.dart';
-import 'package:rumah_vokasi/features/mains/services/enrollment_service.dart';
+//import 'package:rumah_vokasi/features/mains/services/enrollment_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../utils/dummy_data.dart';
 
 class HpBeranda extends StatefulWidget {
   const HpBeranda({super.key});
@@ -44,17 +42,18 @@ class _HpBerandaState extends State<HpBeranda> {
       name = prefs.getString("name");
       token = prefs.getString("access_token");
     });
-    if (token != null) {
-      loadData(token!);
-    }
+    //if (token != null) {
+    //  loadData(token!);
+    //}
   }
 
-  Future<void> loadData(String token) async {
-    final result = await EnrollmentService().getEnrollment(token);
-    setState(() {
-      enrollment = result;
-    });
-  }
+  //Future<void> loadData(String token) async {
+  //  final result = await EnrollmentService().getEnrollment(token);
+  //  setState(() {
+  //    enrollment = result;
+  //    isBookMarkList = List.generate(enrollment.length, (_) => false);
+  //  });
+  //}
 
   @override
   void dispose() {
@@ -66,7 +65,6 @@ class _HpBerandaState extends State<HpBeranda> {
   void initState() {
     super.initState();
     loadUserFromSP();
-    isBookMarkList = List.generate(courses.length, (_) => false);
   }
 
   @override
@@ -244,220 +242,14 @@ class _HpBerandaState extends State<HpBeranda> {
                     ),
                   ),
                   const SizedBox(height: 3),
-                  if (enrollment.isEmpty)
-                    Center(
-                      child: Text(
-                        "Belum ada Enrollment",
-                        style: AppTextStyle.default16w6.copyWith(
-                          color: AppColor.primaryBlue,
-                        ),
+                  Center(
+                    child: Text(
+                      "Belum ada Enrollment",
+                      style: AppTextStyle.default16w6.copyWith(
+                        color: AppColor.primaryBlue,
                       ),
-                    )
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: enrollment.length,
-                      itemBuilder: (context, index) {
-                        final enrollmentShow = enrollment[index];
-                        final isBookMark = isBookMarkList[index];
-                        final List<String?> tags = [
-                          enrollmentShow.subBagTitle,
-                          enrollmentShow.subTitle,
-                          enrollmentShow.kompetensiTitle,
-                          enrollmentShow.programTitle,
-                          enrollmentShow.bidangTitle,
-                        ].where((e) => e != null && e.isNotEmpty).toList();
-                        return Card(
-                          margin: EdgeInsets.only(top: 8, bottom: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 3,
-                          child: Column(
-                            children: [
-                              Container(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                child: Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(16),
-                                        topRight: Radius.circular(16),
-                                      ),
-                                      child: enrollmentShow.image.isEmpty
-                                          ? Image.asset(
-                                              'assets/nps/course-1.png',
-                                              width: double.infinity,
-                                              height: 150,
-                                              fit: BoxFit.cover,
-                                            )
-                                          : Image.memory(
-                                              base64Decode(
-                                                enrollmentShow.image,
-                                              ),
-                                              width: double.infinity,
-                                              height: 150,
-                                              fit: BoxFit.cover,
-                                            ),
-                                    ),
-                                    Positioned(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 3,
-                                          horizontal: 25,
-                                        ),
-                                        decoration: const BoxDecoration(
-                                          color: AppColor.primaryBlue,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(16),
-                                            bottomRight: Radius.circular(24),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          "Gratis",
-                                          style: AppTextStyle.default16w6
-                                              .copyWith(color: Colors.white),
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      right: 10,
-                                      bottom: 10,
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 5,
-                                          vertical: 5,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColor.tagBestSeller,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          "Best Seller!",
-                                          style: AppTextStyle.popins10w6
-                                              .copyWith(
-                                                color: AppColor.textBestSeller,
-                                              ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  10,
-                                  0,
-                                  10,
-                                  10,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                enrollmentShow.courseTitle,
-                                                style: AppTextStyle.popins18
-                                                    .copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w800,
-                                                    ),
-                                                overflow: TextOverflow.ellipsis,
-                                                maxLines: 1,
-                                              ),
-                                              Text(
-                                                enrollmentShow.instructorName,
-                                                style: AppTextStyle.popins14
-                                                    .copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w400,
-                                                      color: AppColor.textGrey,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          child: IconButton(
-                                            icon: Icon(
-                                              isBookMark
-                                                  ? Icons.bookmark
-                                                  : Icons.bookmark_border,
-                                            ),
-                                            color: AppColor.primaryBlue,
-                                            onPressed: () {
-                                              setState(() {
-                                                isBookMarkList[index] =
-                                                    !isBookMark;
-                                              });
-                                            },
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(
-                                        children: tags.asMap().entries.map((
-                                          entry,
-                                        ) {
-                                          final index = entry.key;
-                                          final tag = entry.value;
-
-                                          final colors = [
-                                            AppColor.primaryBlue,
-                                            AppColor.yellow,
-                                            AppColor.green,
-                                          ];
-
-                                          final color =
-                                              colors[index % colors.length];
-
-                                          return Container(
-                                            margin: const EdgeInsets.only(
-                                              right: 8,
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 6,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: color.withValues(
-                                                alpha: 0.15,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              tag!,
-                                              style: AppTextStyle.popins12wBold
-                                                  .copyWith(
-                                                    color: color,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
                     ),
+                  ),
                 ],
               ),
             ),

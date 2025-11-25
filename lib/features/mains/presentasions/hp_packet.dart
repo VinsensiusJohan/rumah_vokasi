@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:rumah_vokasi/core/app_button_style.dart';
@@ -5,8 +7,11 @@ import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_form_style.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
 import 'package:rumah_vokasi/features/mains/models/course_user_model.dart';
+import 'package:rumah_vokasi/features/mains/models/enrollment_model.dart';
 import 'package:rumah_vokasi/features/mains/services/bookmark_service.dart';
+import 'package:rumah_vokasi/features/mains/services/enrollment_service.dart';
 import 'package:rumah_vokasi/utils/dummy_data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HpPacket extends StatefulWidget {
   const HpPacket({super.key});
@@ -23,6 +28,39 @@ class _HpPacketState extends State<HpPacket> {
   List<CourseUser> filteredCourse = [];
   Set<String> bookmarkID = {};
 
+  String? name;
+  String? token;
+  String? userId;
+  List<String> listBookMark = [];
+
+  late List<bool> isBookMarkList;
+  List<EnrollmentItem> enrollment = [];
+
+  Future<void> loadUserFromSP() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      name = prefs.getString("name");
+      token = prefs.getString("access_token");
+      userId = prefs.getString("user_id");
+    });
+    if (token != null) {
+      loadData(token!, userId!);
+    }
+  }
+
+  Future<void> loadData(String token, String userId) async {
+    final resultEnrollment = await EnrollmentService().getEnrollment(token);
+    final resultBookMark = await BookmarkService().getUserBookmarks(
+      token,
+      userId,
+    );
+    setState(() {
+      enrollment = resultEnrollment;
+      listBookMark = resultBookMark;
+      isBookMarkList = List.generate(enrollment.length, (_) => false);
+    });
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -32,37 +70,8 @@ class _HpPacketState extends State<HpPacket> {
   @override
   void initState() {
     super.initState();
-    _loadBookMark();
+    loadUserFromSP();
     filteredCourse = allCourses;
-  }
-
-  void applyFilter(String filter) {
-    setState(() {
-      seletedFilter = filter;
-
-      if (filter == 'onProgress') {
-        filteredCourse = allCourses.where((c) => c.progress < 1.0).toList();
-      } else if (filter == 'completed') {
-        filteredCourse = allCourses.where((c) => c.progress == 1.0).toList();
-      } else {
-        filteredCourse = allCourses;
-      }
-    });
-  }
-
-  void toggleBookmark(String id) async {
-    await BookmarkService.toggleBookmark(id);
-    final update = await BookmarkService.getBookMark();
-    setState(() {
-      bookmarkID = update;
-    });
-  }
-
-  Future<void> _loadBookMark() async {
-    final save = await BookmarkService.getBookMark();
-    setState(() {
-      bookmarkID = save;
-    });
   }
 
   @override
@@ -156,182 +165,206 @@ class _HpPacketState extends State<HpPacket> {
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: filteredCourse.length,
+                itemCount: enrollment.length,
                 itemBuilder: (context, index) {
-                  final packet = filteredCourse[index];
-                  final isBookMark = bookmarkID.contains(packet.id);
-                  return InkWell(
-                    onTap: () {},
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      elevation: 3,
-                      color: Colors.white,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Container(
-                            margin: EdgeInsets.only(bottom: 10),
-                            child: Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(25),
-                                    topRight: Radius.circular(25),
+                  final enrollmentShow = enrollment[index];
+                  final List<String?> tags = [
+                    enrollmentShow.subBagTitle,
+                    enrollmentShow.subTitle,
+                    enrollmentShow.kompetensiTitle,
+                    enrollmentShow.programTitle,
+                    enrollmentShow.bidangTitle,
+                  ].where((e) => e != null && e.isNotEmpty).toList();
+                  return Card(
+                    margin: EdgeInsets.only(top: 8, bottom: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 3,
+                    child: Column(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  topRight: Radius.circular(16),
+                                ),
+                                child: enrollmentShow.image.isEmpty
+                                    ? Image.asset(
+                                        'assets/nps/course-1.png',
+                                        width: double.infinity,
+                                        height: 150,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.memory(
+                                        base64Decode(enrollmentShow.image),
+                                        width: double.infinity,
+                                        height: 150,
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                              Positioned(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 3,
+                                    horizontal: 25,
                                   ),
-                                  child: Image.asset(
-                                    packet.image,
-                                    height: 150,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
+                                  decoration: const BoxDecoration(
+                                    color: AppColor.primaryBlue,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(16),
+                                      bottomRight: Radius.circular(24),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    "Gratis",
+                                    style: AppTextStyle.default16w6.copyWith(
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                                Positioned(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: packet.progress == 1.0
-                                          ? AppColor.greenButtonPacket
-                                          : AppColor.orangeButtonPacket,
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(25),
-                                        bottomRight: Radius.circular(25),
-                                      ),
-                                    ),
-                                    child: SvgPicture.asset(
-                                      packet.progress == 1.0
-                                          ? 'assets/icons/trophy.svg'
-                                          : 'assets/icons/fire.svg',
-                                      width: 17,
-                                      height: 17,
-                                      colorFilter: const ColorFilter.mode(
-                                        Colors.white,
-                                        BlendMode.srcIn,
-                                      ),
+                              ),
+                              Positioned(
+                                right: 10,
+                                bottom: 10,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 5,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColor.tagBestSeller,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    "Best Seller!",
+                                    style: AppTextStyle.popins10w6.copyWith(
+                                      color: AppColor.textBestSeller,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Row(
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          packet.title,
+                                          enrollmentShow.courseTitle,
                                           style: AppTextStyle.popins18.copyWith(
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight: FontWeight.w800,
                                           ),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
                                         ),
                                         Text(
-                                          packet.name,
+                                          enrollmentShow.instructorName,
                                           style: AppTextStyle.popins14.copyWith(
                                             fontWeight: FontWeight.w400,
                                             color: AppColor.textGrey,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
                                     ),
-                                    const Spacer(),
-                                    SizedBox(
-                                      child: IconButton(
-                                        icon: Icon(
-                                          isBookMark
-                                              ? Icons.bookmark
-                                              : Icons.bookmark_border,
-                                        ),
-                                        color: AppColor.primaryBlue,
-                                        onPressed: () =>
-                                            toggleBookmark(packet.id),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children: packet.bab.asMap().entries.map((
-                                      entry,
-                                    ) {
-                                      final index = entry.key;
-                                      final babName = entry.value;
-
-                                      final colors = [
-                                        AppColor.primaryBlue,
-                                        AppColor.yellow,
-                                        AppColor.green,
-                                      ];
-
-                                      final color =
-                                          colors[index % colors.length];
-
-                                      return Container(
-                                        margin: const EdgeInsets.only(right: 8),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: color.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          babName,
-                                          style: AppTextStyle.popins12wBold
-                                              .copyWith(color: color, fontWeight: FontWeight.w500),
-                                        ),
-                                      );
-                                    }).toList(),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: LinearProgressIndicator(
-                                          value: packet.progress,
-                                          backgroundColor: Colors.grey.shade200,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                AppColor.green2,
-                                              ),
-                                          minHeight: 10,
-                                        ),
+                                  SizedBox(
+                                    child: IconButton(
+                                      icon: Icon(
+                                        listBookMark.contains(
+                                              enrollmentShow.courseId,
+                                            )
+                                            ? Icons.bookmark
+                                            : Icons.bookmark_border,
                                       ),
+                                      color: AppColor.primaryBlue,
+                                      onPressed: () async {
+                                        if (listBookMark.contains(
+                                          enrollmentShow.courseId,
+                                        )) {
+                                          // Hapus bookmark
+                                          await BookmarkService()
+                                              .removeBookmark(
+                                                token!,
+                                                enrollmentShow.courseId,
+                                                userId!
+                                              );
+                                          setState(() {
+                                            listBookMark.remove(
+                                              enrollmentShow.courseId,
+                                            );
+                                          });
+                                        } else {
+                                          // Tambah bookmark
+                                          await BookmarkService().addBookmark(
+                                            token!,
+                                            enrollmentShow.courseId,
+                                          );
+                                          setState(() {
+                                            listBookMark.add(
+                                              enrollmentShow.courseId,
+                                            );
+                                          });
+                                        }
+                                      },
                                     ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      "${((packet.progress) * 100).toStringAsFixed(0)}%",
-                                      style: AppTextStyle.popins12wBold,
-                                    ),
-                                  ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: tags.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final tag = entry.value;
+
+                                    final colors = [
+                                      AppColor.primaryBlue,
+                                      AppColor.yellow,
+                                      AppColor.green,
+                                    ];
+
+                                    final color = colors[index % colors.length];
+
+                                    return Container(
+                                      margin: const EdgeInsets.only(right: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: color.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        tag!,
+                                        style: AppTextStyle.popins12wBold
+                                            .copyWith(
+                                              color: color,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                    );
+                                  }).toList(),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -395,7 +428,6 @@ class _HpPacketState extends State<HpPacket> {
       onPressed: () {
         setState(() {
           _selectedCategory = index;
-          applyFilter(value);
         });
       },
       child: Row(

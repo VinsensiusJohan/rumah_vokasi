@@ -350,7 +350,7 @@ class _PpProfilePageState extends State<PpProfilePage> {
         ),
       ),
       bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(30, 10, 30, 50),
+        padding: EdgeInsets.fromLTRB(30, 10, 30, 30),
         child: ElevatedButton(
           style: AppButtonStyle.primaryButton,
           onPressed: () {
