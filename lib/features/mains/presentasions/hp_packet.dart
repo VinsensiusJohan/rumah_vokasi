@@ -6,11 +6,9 @@ import 'package:rumah_vokasi/core/app_button_style.dart';
 import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_form_style.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
-import 'package:rumah_vokasi/features/mains/models/course_user_model.dart';
 import 'package:rumah_vokasi/features/mains/models/enrollment_model.dart';
 import 'package:rumah_vokasi/features/mains/services/bookmark_service.dart';
-import 'package:rumah_vokasi/features/mains/services/enrollment_service.dart';
-import 'package:rumah_vokasi/utils/dummy_data.dart';
+import 'package:rumah_vokasi/features/mains/services/enrollment_course_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HpPacket extends StatefulWidget {
@@ -25,7 +23,7 @@ class _HpPacketState extends State<HpPacket> {
 
   String seletedFilter = 'all';
   int _selectedCategory = 0;
-  List<CourseUser> filteredCourse = [];
+  //List<CourseUser> filteredCourse = [];
   Set<String> bookmarkID = {};
 
   String? name;
@@ -49,7 +47,7 @@ class _HpPacketState extends State<HpPacket> {
   }
 
   Future<void> loadData(String token, String userId) async {
-    final resultEnrollment = await EnrollmentService().getEnrollment(token);
+    final resultEnrollment = await EnrollmentCourseService().getEnrollment(token);
     final resultBookMark = await BookmarkService().getUserBookmarks(
       token,
       userId,
@@ -71,7 +69,7 @@ class _HpPacketState extends State<HpPacket> {
   void initState() {
     super.initState();
     loadUserFromSP();
-    filteredCourse = allCourses;
+    //filteredCourse = allCourses;
   }
 
   @override

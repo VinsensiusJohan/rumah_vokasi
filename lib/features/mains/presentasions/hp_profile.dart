@@ -1,15 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
 import 'package:rumah_vokasi/features/auth/presentasions/pages/login_register_page.dart';
+import 'package:rumah_vokasi/features/mains/models/user_profile_model.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_bookmark_page.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_certificate.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_changepw_page.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_history_page.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_profile_page.dart';
+import 'package:rumah_vokasi/features/mains/services/user_profile_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class HpProfile extends StatefulWidget {
   const HpProfile({super.key});
@@ -21,12 +27,113 @@ class HpProfile extends StatefulWidget {
 class _HpProfileState extends State<HpProfile> {
   String? name;
   String? email;
+  String? bio;
+  String? phone;
+  String? token;
+  String? userID;
+  String? profilePhoto;
+
+  ProfileData? profile;
+
+  Future<void> pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: source,
+      imageQuality: 70,
+    );
+
+    if (image == null) return;
+
+    // Convert ke base64
+    final bytes = await File(image.path).readAsBytes();
+    final base64Image = base64Encode(bytes);
+
+    // Kirim ke API
+    await UserProfileService().updateProfile(
+      userID: userID!,
+      name: name!,
+      email: email!,
+      profilePicture: base64Image,
+      bio: bio!,
+      phone: phone!,
+      address: "",
+      experience: "",
+      specialist: "",
+      document: "",
+      token: token!,
+    );
+
+    // Simpan ke SharedPreferences supaya langsung tampil
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("profile_photo", base64Image);
+
+    setState(() {
+      profilePhoto = base64Image;
+    }); // refresh tampilan profil
+  }
+
+  void showPhotoOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return Container(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.camera_alt),
+                title: Text("Ambil dari Kamera"),
+                onTap: () {
+                  Navigator.pop(context);
+                  pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.photo),
+                title: Text("Pilih dari Galeri"),
+                onTap: () {
+                  Navigator.pop(context);
+                  pickImage(ImageSource.gallery);
+                },
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                leading: Icon(Icons.close),
+                title: Text("Batal"),
+                onTap: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> loadUserFromSP() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       name = prefs.getString("name");
       email = prefs.getString("email");
+      token = prefs.getString("access_token");
+      userID = prefs.getString("user_id");
+      profilePhoto = prefs.getString("profile_photo");
+    });
+
+    if (token != null && userID != null) {
+      loadData(token!, userID!);
+    }
+  }
+
+  Future<void> loadData(String token, String userID) async {
+    final response = await UserProfileService().getProfile(token, userID);
+    setState(() {
+      profile = response;
+      bio = profile?.bio;
+      phone = profile?.phone;
     });
   }
 
@@ -93,7 +200,7 @@ class _HpProfileState extends State<HpProfile> {
                     clipBehavior: Clip.hardEdge,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(80),
+                      shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.grey,
@@ -102,24 +209,44 @@ class _HpProfileState extends State<HpProfile> {
                         ),
                       ],
                     ),
-                    child: Image.asset(
-                      'assets/images/eula-slide-1.png',
-                      height: 90,
-                    ),
+                    child: profilePhoto == null
+                        ? Image.asset(
+                            'assets/images/eula-slide-1.png',
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.memory(
+                            base64Decode(profilePhoto!),
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                   Positioned(
-                    right: 4,
-                    bottom: 4,
-                    child: Container(
-                      padding: EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: AppColor.primaryDarkBlue4,
-                      ),
-                      child: Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 20,
+                    right: 3,
+                    bottom: 3,
+                    child: GestureDetector(
+                      onTap: () {
+                        if (userID == null || token == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Sedang memuat data...")),
+                          );
+                          return;
+                        }
+                        showPhotoOptions();
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: AppColor.primaryDarkBlue4,
+                        ),
+                        child: Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),

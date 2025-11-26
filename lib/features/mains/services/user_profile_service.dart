@@ -37,38 +37,41 @@ class UserProfileService {
     required String experience,
     required String specialist,
     required String document,
-    required String token
+    required String token,
   }) async {
     final url = Uri.parse("$baseUrl/user/profile");
 
     final body = jsonEncode({
       "id": userID,
       "user_type": "STUDENT",
-      "name": name, 
-      "email": email, 
+      "name": name,
+      "email": email,
       "profile_picture": profilePicture,
       "bio": bio,
       "phone": phone,
       "address": address,
       "experience": experience,
       "specialist": specialist,
-      "dokumen_kompetensi":document
+      "dokumen_kompetensi": document,
     });
 
-    final response = await http.put(
-      url,
-      headers: {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
-      },
-      body: body
-    );
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+        body: body,
+      );
 
-    if(response.statusCode ==200){
-      return true;
-    } else {
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
       return false;
     }
-
   }
 }
