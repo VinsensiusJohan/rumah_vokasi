@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:rumah_vokasi/features/mains/models/course_model.dart';
+import 'package:rumah_vokasi/features/mains/models/course_section_model.dart';
 import 'package:rumah_vokasi/features/mains/models/enrollment_model.dart';
 
 class EnrollmentCourseService {
@@ -65,11 +66,25 @@ class EnrollmentCourseService {
       if (jsonMap["data"] is List) {
         return [];
       } else {
-        final courseResponse = CourseResponse.fromJson(jsonMap);
-        return courseResponse.data.data;
+        return CourseResponse.fromJson(jsonMap).data.data;
       }
     } else {
       return [];
+    }
+  }
+
+  Future<CourseSectionData?> getCourseByID(String courseID) async {
+    final url = Uri.parse("$baseUrl/courses?id=$courseID");
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode != 200) {
+        return null;
+      }
+      final jsonBody = jsonDecode(response.body);
+      return CourseSectionResponse.fromJson(jsonBody).data;
+    } catch (e) {
+      return null;
     }
   }
 }

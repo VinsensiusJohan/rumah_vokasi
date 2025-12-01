@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/hp_beranda.dart';
-import 'package:rumah_vokasi/features/mains/presentasions/hp_packet.dart';
+import 'package:rumah_vokasi/features/mains/presentasions/hp_course.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/hp_profile.dart';
 
 class HomePage extends StatefulWidget {

@@ -44,11 +44,9 @@ class _HpProfileState extends State<HpProfile> {
 
     if (image == null) return;
 
-    // Convert ke base64
     final bytes = await File(image.path).readAsBytes();
     final base64Image = base64Encode(bytes);
 
-    // Kirim ke API
     await UserProfileService().updateProfile(
       userID: userID!,
       name: name!,
@@ -63,13 +61,12 @@ class _HpProfileState extends State<HpProfile> {
       token: token!,
     );
 
-    // Simpan ke SharedPreferences supaya langsung tampil
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString("profile_photo", base64Image);
 
     setState(() {
       profilePhoto = base64Image;
-    }); // refresh tampilan profil
+    });
   }
 
   void showPhotoOptions() {
@@ -130,11 +127,9 @@ class _HpProfileState extends State<HpProfile> {
 
   Future<void> loadData(String token, String userID) async {
     final response = await UserProfileService().getProfile(token, userID);
-    setState(() {
       profile = response;
       bio = profile?.bio;
       phone = profile?.phone;
-    });
   }
 
   void logoutUser() {
