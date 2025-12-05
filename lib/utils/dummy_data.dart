@@ -1,4 +1,3 @@
-import 'package:rumah_vokasi/features/course/models/course_section_model.dart';
 import 'package:rumah_vokasi/features/course/models/lesson_option_model.dart';
 import 'package:rumah_vokasi/features/mains/models/certificate_model.dart';
 import 'package:rumah_vokasi/features/mains/models/payment_history_model.dart';
@@ -111,14 +110,6 @@ final List<Certificate> sertifikat = [
     name: 'Budi Santosa',
     bab: ['Teknik Elektro', 'Mikrokontroler', 'Pemrograman', 'Integrasi Cloud'],
   ),
-];
-
-//Section Course
-final List<CourseSection> section = [
-  CourseSection(title: 'Dasar Robotik', total: 3, type: SectionType.materi),
-  CourseSection(title: 'Robotik 2', total: 2, type: SectionType.materi),
-  CourseSection(title: 'Robotik 3', total: 4, type: SectionType.materi),
-  CourseSection(title: 'Kuis Akhir', total: 1, type: SectionType.kuis),
 ];
 
 //Section Option

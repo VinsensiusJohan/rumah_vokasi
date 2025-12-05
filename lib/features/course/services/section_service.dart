@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:rumah_vokasi/features/mains/models/section_model.dart';
+import 'package:rumah_vokasi/features/course/models/section_model.dart';
 
 class SectionService {
   final String baseUrl =
