@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -5,9 +6,16 @@ import 'package:flutter_svg/svg.dart';
 import 'package:rumah_vokasi/core/app_button_style.dart';
 import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
+import 'package:rumah_vokasi/features/course/models/question_option_model.dart';
+import 'package:rumah_vokasi/features/course/presentasions/section_page.dart';
+import 'package:rumah_vokasi/features/course/services/question_textoption_service.dart';
+import 'package:rumah_vokasi/features/course/services/quiz_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class QuizWorkPage extends StatefulWidget {
-  const QuizWorkPage({super.key});
+  final String quizID;
+  final String courseID;
+  const QuizWorkPage({super.key, required this.quizID, required this.courseID});
 
   @override
   State<QuizWorkPage> createState() => _QuizWorkPageState();
@@ -16,72 +24,79 @@ class QuizWorkPage extends StatefulWidget {
 class _QuizWorkPageState extends State<QuizWorkPage> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
-
-  final List<Map<String, dynamic>> questions = [
-    {
-      "question_id": "q1",
-      "question_text": "Tipe data apa yang digunakan untuk menyimpan teks?",
-      "answers": [
-        {"answer_id": "a1", "answer_text": "String", "is_correct": 1},
-        {"answer_id": "a2", "answer_text": "Int", "is_correct": 0},
-        {"answer_id": "a3", "answer_text": "Double", "is_correct": 0},
-        {"answer_id": "a4", "answer_text": "Bool", "is_correct": 0},
-      ],
-    },
-    {
-      "question_id": "q2",
-      "question_text":
-          "Simbol apa yang digunakan untuk menandai komentar satu baris di Dart?",
-      "answers": [
-        {"answer_id": "a5", "answer_text": "//", "is_correct": 1},
-        {"answer_id": "a6", "answer_text": "#", "is_correct": 0},
-        {"answer_id": "a7", "answer_text": "<!-- -->", "is_correct": 0},
-        {"answer_id": "a8", "answer_text": "/* */", "is_correct": 0},
-      ],
-    },
-    {
-      "question_id": "q3",
-      "question_text":
-          "Keyword apa yang digunakan untuk mendefinisikan variabel yang tidak bisa diubah nilainya?",
-      "answers": [
-        {"answer_id": "a9", "answer_text": "final", "is_correct": 1},
-        {"answer_id": "a10", "answer_text": "var", "is_correct": 0},
-        {"answer_id": "a11", "answer_text": "dynamic", "is_correct": 0},
-        {"answer_id": "a12", "answer_text": "mutable", "is_correct": 0},
-      ],
-    },
-    {
-      "question_id": "q4",
-      "question_text": "Fungsi utama dari widget `Scaffold` di Flutter adalah?",
-      "answers": [
-        {
-          "answer_id": "a13",
-          "answer_text": "Sebagai struktur dasar layout halaman",
-          "is_correct": 1,
-        },
-        {
-          "answer_id": "a14",
-          "answer_text": "Untuk menampilkan teks",
-          "is_correct": 0,
-        },
-        {
-          "answer_id": "a15",
-          "answer_text": "Untuk menyimpan data",
-          "is_correct": 0,
-        },
-        {
-          "answer_id": "a16",
-          "answer_text": "Untuk menambahkan animasi",
-          "is_correct": 0,
-        },
-      ],
-    },
-  ];
-
-  late final Map<String, List<Map<String, dynamic>>> shuffledAnswers;
+  final remainingTime = ValueNotifier<Duration>(Duration.zero);
+  Timer? _timer;
+  Map<String, List<AnswerItem>> shuffledAnswers = {};
   final Map<String, String> selectedAnswers = {};
   Map<String, bool> markedQuestions = {};
   bool isExpanded = false;
+  String? token;
+  String? attemptId;
+  bool isLoading = true;
+
+  QuizInfo? quizInfo;
+  List<QuestionItem>? questions;
+
+  Future<void> loadData(String quizID) async {
+    final prefs = await SharedPreferences.getInstance();
+    token = prefs.getString("access_token");
+
+    if (token == null) return;
+
+    try {
+      attemptId = await QuizService().getQuizAttempt(token!, quizID);
+
+      final resultquiz = await QuizQuestionService().getQuizOption(
+        quizID,
+        token!,
+      );
+
+      if (resultquiz != null) {
+        final shuffled = <String, List<AnswerItem>>{};
+        final marked = <String, bool>{};
+
+        for (final q in resultquiz.questions) {
+          final answers = List<AnswerItem>.from(q.answers);
+          answers.shuffle(Random(q.questionId.hashCode));
+          shuffled[q.questionId] = answers;
+          marked[q.questionId] = false;
+        }
+
+        final endTime = DateTime.now().add(
+          Duration(minutes: int.tryParse(resultquiz.quiz.durationMinutes)!),
+        );
+        await prefs.setString('quiz_end_time', endTime.toIso8601String());
+
+        start(endTime);
+
+        setState(() {
+          quizInfo = resultquiz.quiz;
+          questions = resultquiz.questions;
+          shuffledAnswers = shuffled;
+          markedQuestions = marked;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("$e");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void start(DateTime endTime) {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      final diff = endTime.difference(DateTime.now());
+      if (diff.isNegative) {
+        remainingTime.value = Duration.zero;
+        t.cancel();
+      } else {
+        remainingTime.value = diff;
+      }
+    });
+  }
 
   bool isQuestionAnswered(String questionId) {
     return selectedAnswers[questionId] != null; // sudah pilih jawaban
@@ -91,22 +106,8 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
     return markedQuestions[questionId] == true; // ditandai
   }
 
-  @override
-  void initState() {
-    super.initState();
-    shuffledAnswers = {
-      for (var q in questions)
-        q["question_id"]: List<Map<String, dynamic>>.from(q["answers"])
-          ..shuffle(Random(q["question_id"].hashCode)),
-    };
-
-    for (var q in questions) {
-      markedQuestions[q["question_id"]] = false;
-    }
-  }
-
   void _nextQuestion() {
-    if (_currentIndex < questions.length - 1) {
+    if (_currentIndex < questions!.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -124,10 +125,63 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    loadData(widget.quizID);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _timer?.cancel();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final totalQuestions = questions.length;
+    if (isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (questions == null || questions!.isEmpty) {
+      return const Scaffold(body: Center(child: Text("Failed to load Quiz")));
+    }
+
+    if (attemptId == "") {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "You already attempted this quiz and cannot attempt more than once",
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: 120,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: AppButtonStyle.primaryButton,
+                  child: Text(
+                    "Kembali",
+                    style: AppTextStyle.popins18.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final totalQuestions = questions!.length;
 
     return Scaffold(
+      appBar: AppBar(automaticallyImplyLeading: false),
       body: Stack(
         children: [
           SafeArea(
@@ -135,6 +189,7 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               child: Column(
                 children: [
+                  // Card ---------------------------------------------------------
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
@@ -160,102 +215,142 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                           ),
                         ),
                         const SizedBox(width: 25),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "04 - Kuis Akhir Pemrograman",
-                              style: AppTextStyle.popins12wBold.copyWith(
-                                fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                quizInfo!.title,
+                                style: AppTextStyle.popins12wBold.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/open_book.svg',
-                                  width: 15,
-                                  height: 15,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.black,
-                                    BlendMode.srcIn,
+                              const SizedBox(height: 4),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: SvgPicture.asset(
+                                      'assets/icons/open_book.svg',
+                                      width: 15,
+                                      height: 15,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  " • Kelas Pemrograman Robotic",
-                                  style: AppTextStyle.popins10w6.copyWith(
-                                    fontWeight: FontWeight.w400,
+                                  Text(" • "),
+                                  Expanded(
+                                    child: Text(
+                                      (quizInfo!.description == null ||
+                                              quizInfo!.description!
+                                                  .trim()
+                                                  .isEmpty)
+                                          ? "Kuis"
+                                          : quizInfo!.description!,
+                                      style: AppTextStyle.popins10w6.copyWith(
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.start,
+                                      softWrap: true,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/NotePencil.svg',
-                                  width: 15,
-                                  height: 15,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.black,
-                                    BlendMode.srcIn,
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/NotePencil.svg',
+                                    width: 15,
+                                    height: 15,
+                                    colorFilter: ColorFilter.mode(
+                                      Colors.black,
+                                      BlendMode.srcIn,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  " • Pilihan Ganda",
-                                  style: AppTextStyle.popins10w6.copyWith(
-                                    fontWeight: FontWeight.w400,
+                                  Text(
+                                    quizInfo!.answerType == "OPTION"
+                                        ? " • Pilihan Ganda"
+                                        : " • Isian",
+                                    style: AppTextStyle.popins10w6.copyWith(
+                                      fontWeight: FontWeight.w400,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/stack.svg',
-                                  width: 15,
-                                  height: 15,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.black,
-                                    BlendMode.srcIn,
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/clock.svg',
+                                    width: 15,
+                                    height: 15,
+                                    colorFilter: const ColorFilter.mode(
+                                      Colors.black,
+                                      BlendMode.srcIn,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  " • 50 Soal",
-                                  style: AppTextStyle.popins10w6.copyWith(
-                                    fontWeight: FontWeight.w400,
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    " • ${quizInfo!.durationMinutes} menit",
+                                    style: AppTextStyle.popins10w6.copyWith(
+                                      fontWeight: FontWeight.w400,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 20),
-                                SvgPicture.asset(
-                                  'assets/icons/clock.svg',
-                                  width: 15,
-                                  height: 15,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.black,
-                                    BlendMode.srcIn,
+
+                                  const Spacer(),
+
+                                  ValueListenableBuilder<Duration>(
+                                    valueListenable: remainingTime,
+                                    builder: (_, duration, __) {
+                                      final mm = duration.inMinutes
+                                          .remainder(60)
+                                          .toString()
+                                          .padLeft(2, '0');
+                                      final ss = duration.inSeconds
+                                          .remainder(60)
+                                          .toString()
+                                          .padLeft(2, '0');
+
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 6,
+                                          horizontal: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColor.primaryBlue
+                                              .withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          "$mm:$ss",
+                                          style: AppTextStyle.inter12.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColor.primaryBlue,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                ),
-                                Text(
-                                  " • 90 Menit",
-                                  style: AppTextStyle.popins10w6.copyWith(
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                                const SizedBox(width: 20),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 15),
+
+                  // Question -----------------------------------------------------
                   Flexible(
                     fit: FlexFit.loose,
                     child: PageView.builder(
@@ -264,13 +359,11 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                       onPageChanged: (index) {
                         setState(() => _currentIndex = index);
                       },
-                      itemCount: questions.length,
+                      itemCount: questions!.length,
                       itemBuilder: (context, index) {
-                        final question = questions[index];
-                        final answers =
-                            shuffledAnswers[question["question_id"]]!;
-                        final selected =
-                            selectedAnswers[question["question_id"]];
+                        final question = questions![index];
+                        final answers = shuffledAnswers[question.questionId]!;
+                        final selected = selectedAnswers[question.questionId];
 
                         return Container(
                           decoration: BoxDecoration(
@@ -285,6 +378,7 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Card Question ---------------------------------------------------
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
@@ -298,7 +392,7 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                                     ToggleButtons(
                                       borderRadius: BorderRadius.circular(12),
                                       fillColor:
-                                          markedQuestions[question["question_id"]]!
+                                          markedQuestions[question.questionId]!
                                           ? AppColor.yellow
                                           : Colors.white,
                                       selectedBorderColor: Colors.white,
@@ -310,10 +404,10 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                                         minWidth: 40,
                                       ),
                                       isSelected: [
-                                        markedQuestions[question["question_id"]]!,
+                                        markedQuestions[question.questionId]!,
                                       ],
                                       onPressed: (i) {
-                                        final id = question["question_id"];
+                                        final id = question.questionId;
                                         setState(() {
                                           markedQuestions[id] =
                                               !markedQuestions[id]!;
@@ -332,20 +426,23 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                                                       fontWeight:
                                                           FontWeight.w500,
                                                       color:
-                                                          markedQuestions[question["question_id"]]!
+                                                          markedQuestions[question
+                                                              .questionId]!
                                                           ? Colors.white
                                                           : AppColor.yellow,
                                                     ),
                                               ),
                                               const SizedBox(width: 5),
                                               Icon(
-                                                markedQuestions[question["question_id"]]!
+                                                markedQuestions[question
+                                                        .questionId]!
                                                     ? Icons
                                                           .check_circle_outline_outlined
                                                     : Icons
                                                           .check_circle_rounded,
                                                 color:
-                                                    markedQuestions[question["question_id"]]!
+                                                    markedQuestions[question
+                                                        .questionId]!
                                                     ? Colors.white
                                                     : AppColor.yellow,
                                               ),
@@ -375,7 +472,7 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                                     ),
                                   ),
                                   child: Text(
-                                    question["question_text"],
+                                    question.questionText,
                                     style: AppTextStyle.popins14.copyWith(
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -393,23 +490,31 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                                   groupValue: selected,
                                   onChanged: (value) {
                                     setState(() {
-                                      selectedAnswers[question["question_id"]] =
+                                      selectedAnswers[question.questionId] =
                                           value!;
                                     });
                                   },
                                   child: Column(
                                     children: answers.map((answer) {
-                                      final answerId =
-                                          answer["answer_id"] as String;
-                                      final answerText =
-                                          answer["answer_text"] as String;
-                                      final isSelected = selected == answerId;
+                                      final isSelected =
+                                          selected == answer.answerId;
 
                                       return GestureDetector(
-                                        onTap: () {
+                                        onTap: () async {
+                                          await QuizQuestionService()
+                                              .saveAnswerOption(
+                                                token!,
+                                                attemptId!,
+                                                question.questionId,
+                                                answer.answerId,
+                                              );
+
+                                          if (!mounted) return;
+
                                           setState(() {
-                                            selectedAnswers[question["question_id"]] =
-                                                answerId;
+                                            selectedAnswers[question
+                                                    .questionId] =
+                                                answer.answerId;
                                           });
                                         },
                                         child: Container(
@@ -435,13 +540,13 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                                           child: Row(
                                             children: [
                                               Radio<String>(
-                                                value: answerId,
+                                                value: answer.answerId,
                                                 activeColor:
                                                     AppColor.primaryBlue,
                                               ),
                                               Expanded(
                                                 child: Text(
-                                                  answerText,
+                                                  answer.answerText,
                                                   style: AppTextStyle.popins14
                                                       .copyWith(
                                                         fontWeight:
@@ -590,7 +695,7 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                         ),
                         const SizedBox(height: 30),
 
-                        // ==== Navigasi Soal ====
+                        // ==== Navigasi Soal ====---------------------------------------------------------------
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -615,11 +720,10 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                               Wrap(
                                 spacing: 15,
                                 runSpacing: 15,
-                                children: List.generate(questions.length, (
+                                children: List.generate(questions!.length, (
                                   index,
                                 ) {
-                                  final qId = questions[index]["question_id"];
-
+                                  final qId = questions![index].questionId;
                                   final bool answered = isQuestionAnswered(qId);
                                   final bool marked = isQuestionMarked(qId);
 
@@ -683,7 +787,23 @@ class _QuizWorkPageState extends State<QuizWorkPage> {
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    await QuizQuestionService().submitQuiz(
+                                      token!,
+                                      attemptId!,
+                                    );
+
+                                    if (!context.mounted) return;
+
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SectionPage(
+                                          courseID: widget.courseID,
+                                        ),
+                                      ),  
+                                    );
+                                  },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColor.primaryBlue,
                                     foregroundColor: Colors.white,

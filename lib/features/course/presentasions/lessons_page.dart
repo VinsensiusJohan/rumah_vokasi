@@ -190,17 +190,34 @@ class _LessonsPageState extends State<LessonsPage> {
                           children: optLesson.map((item) {
                             return InkWell(
                               onTap: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => LessonsPage(
-                                      lessonID: item.id,
-                                      sectionID: widget.sectionID,
-                                      youtubeUrl: item.videoUrl!,
-                                      title: item.title,
-                                    ),
-                                  ),
-                                );
+                                if (item.contentType == "YOUTUBE") {
+                                  if (item.videoUrl != null &&
+                                      item.videoUrl!.trim().isNotEmpty &&
+                                      (item.videoUrl!.contains("youtube.com") ||
+                                          item.videoUrl!.contains(
+                                            "youtu.be",
+                                          ))) {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => LessonsPage(
+                                          lessonID: item.id,
+                                          sectionID: widget.sectionID,
+                                          youtubeUrl: item.videoUrl!,
+                                          title: item.title,
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "Link YouTube tidak tersedia.",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
                               },
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
@@ -230,6 +247,15 @@ class _LessonsPageState extends State<LessonsPage> {
                                               width: 200,
                                               height: 80,
                                               fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return Image.asset(
+                                                      'assets/nps/course-1.png',
+                                                      width: 200,
+                                                      height: 80,
+                                                      fit: BoxFit.cover,
+                                                    );
+                                                  },
                                             )
                                           : Image.asset(
                                               'assets/nps/course-1.png',

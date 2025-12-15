@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:rumah_vokasi/utils/app_formater.dart';
 import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
+import 'package:rumah_vokasi/features/course/models/attempt_result_model.dart';
 import 'package:rumah_vokasi/features/course/models/quiz_model.dart';
+import 'package:rumah_vokasi/features/course/presentasions/quiz_work_page.dart';
+import 'package:rumah_vokasi/features/course/services/attempt_result_service.dart';
 import 'package:rumah_vokasi/features/course/services/quiz_service.dart';
 import 'package:rumah_vokasi/features/mains/models/course_section_model.dart';
 import 'package:rumah_vokasi/features/mains/services/enrollment_course_service.dart';
@@ -19,14 +23,15 @@ class QuizPage extends StatefulWidget {
 
 class _QuizPageState extends State<QuizPage> {
   CourseSectionData? course;
-  QuizData? quiz;
+  List<QuizData> quiz = [];
+  Map<String, QuizAttemptInfo> quizAttempt = {};
 
   String? token;
   bool isLoading = false;
 
   Future<void> loadData(String courseID) async {
     if (widget.lessonID.isEmpty) {
-      throw Exception("LessonID NULL → tidak bisa load quiz");
+      throw Exception("LessonID NULL : tidak bisa load quiz");
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -38,12 +43,19 @@ class _QuizPageState extends State<QuizPage> {
       );
       final quizResponse = token != null
           ? await QuizService().getQuizByLessonId(widget.lessonID, token!)
-          : null;
+          : <QuizData>[];
 
-      // 🚀 ini bagian penting!
+      final attemptMap = token != null
+          ? await QuizResultService().getQuizAttemptMap(
+              token: token!,
+              lessonId: widget.lessonID,
+            )
+          : <String, QuizAttemptInfo>{};
+
       setState(() {
         course = courseResponse;
         quiz = quizResponse;
+        quizAttempt = attemptMap;
         isLoading = false;
       });
     } catch (e) {
@@ -56,7 +68,9 @@ class _QuizPageState extends State<QuizPage> {
   void initState() {
     super.initState();
     isLoading = true;
-    loadData(widget.courseID);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadData(widget.courseID);
+    });
   }
 
   @override
@@ -78,7 +92,7 @@ class _QuizPageState extends State<QuizPage> {
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : (course == null || quiz == null)
+          : (course == null || quiz.isEmpty)
           ? Center(child: Text("Gagal memuat data"))
           : Padding(
               padding: EdgeInsetsGeometry.all(10),
@@ -211,136 +225,186 @@ class _QuizPageState extends State<QuizPage> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey.shade200, width: 2),
-                    ),
-                    padding: EdgeInsets.all(25),
-                    child: Row(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(15),
-                            color: AppColor.primaryBlue.withValues(alpha: 0.2),
-                          ),
-                          padding: EdgeInsets.all(15),
-                          child: SvgPicture.asset(
-                            'assets/icons/NotePencil.svg',
-                            height: 25,
-                            width: 25,
-                            colorFilter: ColorFilter.mode(
-                              AppColor.primaryBlue,
-                              BlendMode.srcIn,
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: quiz.length,
+                      itemBuilder: (context, index) {
+                        final quizShow = quiz[index];
+                        final attemptInfo = quizAttempt[quizShow.id];
+                        final hasAttempt = attemptInfo?.hasAttempt ?? false;
+                        return GestureDetector(
+                          onTap: () {
+                            hasAttempt
+                                ? null
+                                : Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => QuizWorkPage(
+                                        quizID: quizShow.id,
+                                        courseID: widget.courseID,
+                                      ),
+                                    ),
+                                  );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.grey.shade200,
+                                width: 2,
+                              ),
+                            ),
+                            padding: EdgeInsets.all(25),
+                            child: Row(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15),
+                                    color: AppColor.primaryBlue.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                  ),
+                                  padding: EdgeInsets.all(15),
+                                  child: SvgPicture.asset(
+                                    'assets/icons/NotePencil.svg',
+                                    height: 25,
+                                    width: 25,
+                                    colorFilter: ColorFilter.mode(
+                                      AppColor.primaryBlue,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 25),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        quizShow.title,
+                                        style: AppTextStyle.popins12wBold
+                                            .copyWith(
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 2,
+                                            ),
+                                            child: SvgPicture.asset(
+                                              'assets/icons/open_book.svg',
+                                              width: 15,
+                                              height: 15,
+                                            ),
+                                          ),
+                                          Text(" • "),
+                                          Expanded(
+                                            child: Text(
+                                              (quizShow.description == null ||
+                                                      quizShow.description!
+                                                          .trim()
+                                                          .isEmpty)
+                                                  ? "Kuis"
+                                                  : quizShow.description!,
+                                              style: AppTextStyle.popins10w6
+                                                  .copyWith(
+                                                    fontWeight: FontWeight.w400,
+                                                  ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.start,
+                                              softWrap: true,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          SvgPicture.asset(
+                                            'assets/icons/NotePencil.svg',
+                                            width: 15,
+                                            height: 15,
+                                            colorFilter: ColorFilter.mode(
+                                              Colors.black,
+                                              BlendMode.srcIn,
+                                            ),
+                                          ),
+                                          Text(
+                                            quizShow.answerType == "OPTION"
+                                                ? " • Pilihan Ganda"
+                                                : " • Isian",
+                                            style: AppTextStyle.popins10w6
+                                                .copyWith(
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          SvgPicture.asset(
+                                            'assets/icons/scoreboard.svg',
+                                            width: 15,
+                                            height: 15,
+                                            colorFilter: ColorFilter.mode(
+                                              Colors.black,
+                                              BlendMode.srcIn,
+                                            ),
+                                          ),
+                                          Text(
+                                            " • ${AppFormater.formatScore(attemptInfo?.score)}",
+                                            style: AppTextStyle.popins10w6
+                                                .copyWith(
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                          ),
+                                          const SizedBox(width: 20),
+                                          SvgPicture.asset(
+                                            'assets/icons/clock.svg',
+                                            width: 15,
+                                            height: 15,
+                                            colorFilter: ColorFilter.mode(
+                                              Colors.black,
+                                              BlendMode.srcIn,
+                                            ),
+                                          ),
+                                          Text(
+                                            " • ${quizShow.durationMinutes} Menit",
+                                            style: AppTextStyle.popins10w6
+                                                .copyWith(
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                          ),
+                                          const SizedBox(width: 20),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 25),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                quiz!.title,
-                                style: AppTextStyle.popins12wBold.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/icons/open_book.svg',
-                                    width: 15,
-                                    height: 15,
-                                    colorFilter: ColorFilter.mode(
-                                      Colors.black,
-                                      BlendMode.srcIn,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      (quiz!.description == "") ? " • Kuis" : " • ${quiz!.description!}",
-                                      style: AppTextStyle.popins10w6.copyWith(
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/icons/NotePencil.svg',
-                                    width: 15,
-                                    height: 15,
-                                    colorFilter: ColorFilter.mode(
-                                      Colors.black,
-                                      BlendMode.srcIn,
-                                    ),
-                                  ),
-                                  Text(
-                                    quiz!.answerType == "OPTION"
-                                        ? " • Pilihan Ganda"
-                                        : " • Isian",
-                                    style: AppTextStyle.popins10w6.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/icons/stack.svg',
-                                    width: 15,
-                                    height: 15,
-                                    colorFilter: ColorFilter.mode(
-                                      Colors.black,
-                                      BlendMode.srcIn,
-                                    ),
-                                  ),
-                                  //Text(
-                                  //  " • 50 Soal",
-                                  //  style: AppTextStyle.popins10w6.copyWith(
-                                  //    fontWeight: FontWeight.w400,
-                                  //  ),
-                                  //),
-                                  //const SizedBox(width: 20),
-                                  SvgPicture.asset(
-                                    'assets/icons/clock.svg',
-                                    width: 15,
-                                    height: 15,
-                                    colorFilter: ColorFilter.mode(
-                                      Colors.black,
-                                      BlendMode.srcIn,
-                                    ),
-                                  ),
-                                  Text(
-                                    " • ${quiz!.durationMinutes} Menit",
-                                    style: AppTextStyle.popins10w6.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 20),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ],
