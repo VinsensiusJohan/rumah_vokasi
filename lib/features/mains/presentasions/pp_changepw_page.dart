@@ -3,6 +3,9 @@ import 'package:rumah_vokasi/core/app_button_style.dart';
 import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_form_style.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
+import 'package:rumah_vokasi/features/mains/presentasions/home_page.dart';
+import 'package:rumah_vokasi/features/mains/services/change_password_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PpChangepwPage extends StatefulWidget {
   const PpChangepwPage({super.key});
@@ -19,6 +22,78 @@ class _PpChangepwPageState extends State<PpChangepwPage> {
   bool _obscureOP = true;
   bool _obscureNP = true;
   bool _obscureCP = true;
+
+  String? userID;
+  String? token;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserFromSP();
+  }
+
+  Future<void> loadUserFromSP() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      token = prefs.getString("access_token");
+      userID = prefs.getString("user_id");
+    });
+  }
+
+  Future<void> updatePassword(
+    String userID,
+    String oldPassword,
+    String newPassword,
+    String token,
+  ) async {
+    try {
+      final response = await ChangePasswordService().changeUserPassword(
+        userID: userID,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+        token: token,
+      );
+
+      if (response) {
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomePage(index: 2)),
+        );
+      } else {
+        debugPrint("Somethings Wrong");
+      }
+    } catch (e) {
+      debugPrint("Error : $e");
+    }
+  }
+
+  Future<void> submitUpdate() async {
+    String oldPassword = _oldPassword.text.trim();
+    String newPassword = _newPassword.text.trim();
+    String confirmPassword = _confirmPassword.text.trim();
+
+    bool isValid = true;
+
+    if (oldPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
+      setState(() {
+        isValid = false;
+      });
+    }
+
+    if (newPassword != confirmPassword) {
+      setState(() {
+        isValid = false;
+      });
+    }
+
+    if (!isValid) {
+      return;
+    } else {
+      updatePassword(userID!, oldPassword, newPassword, token!);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,18 +191,20 @@ class _PpChangepwPageState extends State<PpChangepwPage> {
                   },
                 ),
               ),
-              const Spacer(),
-              ElevatedButton(
-                style: AppButtonStyle.primaryButton,
-                onPressed: () {},
-                child: Text(
-                  "Simpan & Ubah",
-                  style: AppTextStyle.popins18.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.fromLTRB(30, 10, 30, 30),
+        child: ElevatedButton(
+          style: AppButtonStyle.primaryButton,
+          onPressed: () {
+            submitUpdate();
+          },
+          child: Text(
+            "Simpan & Ubah",
+            style: AppTextStyle.popins18.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
       ),

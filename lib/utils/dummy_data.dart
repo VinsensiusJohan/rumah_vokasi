@@ -1,77 +1,6 @@
-import 'package:rumah_vokasi/features/course/models/course_section_model.dart';
 import 'package:rumah_vokasi/features/course/models/lesson_option_model.dart';
 import 'package:rumah_vokasi/features/mains/models/certificate_model.dart';
-import 'package:rumah_vokasi/features/mains/models/course_user_model.dart';
 import 'package:rumah_vokasi/features/mains/models/payment_history_model.dart';
-import '../features/mains/models/course_model.dart';
-
-//Home + BookMark
-final List<Course> courses = [
-  Course(
-    image: 'assets/nps/course-1.png',
-    title: "Pembuatan Dasar Robot",
-    name: "Eulogius Kurdeo Hesay S.Kom.",
-    rating: 4.6,
-    totalReviews: 451444,
-    bab: ['Teknik Elektro', 'Mikrokontroler', 'Pemrograman', 'Integrasi Cloud'],
-  ),
-  Course(
-    image: 'assets/nps/course-2.png',
-    title: "Elektronika Lanjut",
-    name: "Eulogius Kurdeo Hesay S.Kom.",
-    rating: 4.6,
-    totalReviews: 451444,
-    bab: ['Teknik Elektro', 'Mikrokontroler', 'Pemrograman'],
-  ),
-  Course(
-    image: 'assets/nps/course-3.png',
-    title: "Koneksi API",
-    name: "Eulogius Kurdeo Hesay S.Kom.",
-    rating: 4.6,
-    totalReviews: 451444,
-    bab: ['Teknik Elektro', 'Mikrokontroler', 'Pemrograman'],
-  ),
-  Course(
-    image: 'assets/nps/course-4.png',
-    title: "Mikrokontroller",
-    name: "Eulogius Kurdeo Hesay S.Kom.",
-    rating: 4.6,
-    totalReviews: 451444,
-    bab: ['Teknik Elektro', 'Mikrokontroler', 'Pemrograman'],
-  ),
-];
-
-// Paket Page
-final List<CourseUser> allCourses = [
-  CourseUser(
-    image: 'assets/nps/course-1.png',
-    title: "Pembuatan Dasar Robot",
-    name: "Eulogius Kurdeo Hesay S.Kom.",
-    bab: ['Teknik Elektro', 'Mikrokontroler', 'Pemrograman', 'Integrasi Cloud'],
-    progress: 0.7,
-  ),
-  CourseUser(
-    image: 'assets/nps/course-2.png',
-    title: "Elektronika Lanjut",
-    name: "Eulogius Kurdeo Hesay S.Kom.",
-    bab: ['Teknik Elektro', 'Mikrokontroler', 'Pemrograman'],
-    progress: 1.0,
-  ),
-  CourseUser(
-    image: 'assets/nps/course-3.png',
-    title: "Koneksi API",
-    name: "Eulogius Kurdeo Hesay S.Kom.",
-    bab: ['Teknik Elektro', 'Mikrokontroler', 'Pemrograman'],
-    progress: 0.4,
-  ),
-  CourseUser(
-    image: 'assets/nps/course-4.png',
-    title: "Mikrokontroller",
-    name: "Eulogius Kurdeo Hesay S.Kom.",
-    bab: ['Teknik Elektro', 'Mikrokontroler', 'Pemrograman'],
-    progress: 1.0,
-  ),
-];
 
 //dummy
 final List<PaymentHistory> histories = [
@@ -181,14 +110,6 @@ final List<Certificate> sertifikat = [
     name: 'Budi Santosa',
     bab: ['Teknik Elektro', 'Mikrokontroler', 'Pemrograman', 'Integrasi Cloud'],
   ),
-];
-
-//Section Course
-final List<CourseSection> section = [
-  CourseSection(title: 'Dasar Robotik', total: 3, type: SectionType.materi),
-  CourseSection(title: 'Robotik 2', total: 2, type: SectionType.materi),
-  CourseSection(title: 'Robotik 3', total: 4, type: SectionType.materi),
-  CourseSection(title: 'Kuis Akhir', total: 1, type: SectionType.kuis),
 ];
 
 //Section Option

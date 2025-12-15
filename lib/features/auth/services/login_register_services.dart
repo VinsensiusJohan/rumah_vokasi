@@ -39,32 +39,34 @@ class LoginRegisterServices {
   }
 
   //Login
-  Future<bool> loginUser({
-    required String email,
-    required String password,
-  }) async {
-    final url = Uri.parse("$baseUrl/login");
+  Future<Map<String, dynamic>> loginUser({
+  required String email,
+  required String password,
+}) async {
+  final url = Uri.parse("$baseUrl/login");
 
-    final body = jsonEncode({
-      "email": email,
-      "password": password,
-      "deviceType": "MOBILE",
-    });
+  final body = jsonEncode({
+    "email": email,
+    "password": password,
+    "deviceType": "MOBILE",
+  });
 
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: body,
-    );
+  final response = await http.post(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: body,
+  );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final jsonData = jsonDecode(response.body);
-      await saveToPref(jsonData["data"]);
-      return true;
-    } else {
-      throw Exception("Gagal : ${response.body}");
-    }
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    final jsonData = jsonDecode(response.body);
+    
+    await saveToPref(jsonData["data"]);
+    return jsonData["data"];
+  } else {
+    throw Exception("Gagal : ${response.body}");
   }
+}
+
 
   //Save to Shared Preference
   Future<void> saveToPref(Map<String, dynamic> data) async {

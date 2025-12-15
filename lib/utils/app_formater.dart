@@ -2,25 +2,37 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class AppFormater {
-  static String formatPriceID(num number, {bool withSymbol = true}){
+  static String formatPriceID(num number, {bool withSymbol = true}) {
     final formatCurrency = NumberFormat.currency(
       locale: 'id',
       symbol: withSymbol ? 'Rp ' : '',
-      decimalDigits: 0
+      decimalDigits: 0,
     );
     return formatCurrency.format(number);
   }
+
   static String formatNumber(num value, {int decimalDigits = 0}) {
     final format = NumberFormat.currency(
-      locale: 'id',            
-      symbol: '',             
+      locale: 'id',
+      symbol: '',
       decimalDigits: decimalDigits,
     );
     return format.format(value).trim();
   }
-  
+
   static TextInputFormatter dateTextFormatter = _DateTextFormatter();
 
+  static String formatScore(String? score) {
+    if (score == null || score.isEmpty) return "-";
+
+    final value = double.tryParse(score);
+    if (value == null) return score;
+
+    if (value == value.toInt()) {
+      return value.toInt().toString();
+    }
+    return value.toString();
+  }
 }
 
 class _DateTextFormatter extends TextInputFormatter {

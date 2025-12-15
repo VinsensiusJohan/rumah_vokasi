@@ -1,52 +1,54 @@
-class CourseResponse {
+class EnrollmentResponse {
   final String result;
   final int code;
   final String message;
-  final CourseData data;
+  final EnrollmentData data;
 
-  CourseResponse({
+  EnrollmentResponse({
     required this.result,
     required this.code,
     required this.message,
     required this.data,
   });
 
-  factory CourseResponse.fromJson(Map<String, dynamic> json) {
-    return CourseResponse(
+  factory EnrollmentResponse.fromJson(Map<String, dynamic> json) {
+    return EnrollmentResponse(
       result: json['result'],
       code: json['code'],
       message: json['message'],
-      data: CourseData.fromJson(json['data']),
+      data: EnrollmentData.fromJson(json['data']),
     );
   }
 }
 
-class CourseData {
-  final List<CourseItem> data;
+class EnrollmentData {
+  final List<EnrollmentItem> data;
   final Pagination pagination;
 
-  CourseData({required this.data, required this.pagination});
+  EnrollmentData({required this.data, required this.pagination});
 
-  factory CourseData.fromJson(Map<String, dynamic> json) {
-    return CourseData(
+  factory EnrollmentData.fromJson(Map<String, dynamic> json) {
+    return EnrollmentData(
       data: (json['data'] as List)
-          .map((item) => CourseItem.fromJson(item))
+          .map((item) => EnrollmentItem.fromJson(item))
           .toList(),
       pagination: Pagination.fromJson(json['pagination']),
     );
   }
 }
 
-class CourseItem {
-  final String id;
-  final String title;
+class EnrollmentItem {
+  final String enrollmentId;
+  final String enrolledAt;
+  final String courseId;
+  final String courseTitle;     
   final String description;
   final String price;
-  final String image;
+  final String image;           
   final String? videoUrl;
+  final String courseStatus;
   final String instructorId;
-  final String status;
-  final String instructorName;
+  final String instructorName; 
   final String? subBagId;
   final String? subBagTitle;
   final String? subId;
@@ -58,15 +60,17 @@ class CourseItem {
   final String? bidangId;
   final String? bidangTitle;
 
-  CourseItem({
-    required this.id,
-    required this.title,
+  EnrollmentItem({
+    required this.enrollmentId,
+    required this.enrolledAt,
+    required this.courseId,
+    required this.courseTitle,
     required this.description,
     required this.price,
     required this.image,
     this.videoUrl,
+    required this.courseStatus,
     required this.instructorId,
-    required this.status,
     required this.instructorName,
     this.subBagId,
     this.subBagTitle,
@@ -80,17 +84,20 @@ class CourseItem {
     this.bidangTitle,
   });
 
-  factory CourseItem.fromJson(Map<String, dynamic> json) {
-    return CourseItem(
-      id: json['id'],
-      title: json['title'],
+  factory EnrollmentItem.fromJson(Map<String, dynamic> json) {
+    return EnrollmentItem(
+      enrollmentId: json['enrollment_id'],
+      enrolledAt: json['enrolled_at'],
+      courseId: json['course_id'],
+      courseTitle: json['course_title'],
       description: json['description'],
       price: json['price'],
       image: json['image'],
       videoUrl: json['video_url'],
+      courseStatus: json['course_status'],
       instructorId: json['instructor_id'],
-      status: json['status'],
       instructorName: json['instructor_name'],
+
       subBagId: json['sub_bag_id'],
       subBagTitle: json['sub_bag_title'],
       subId: json['sub_id'],

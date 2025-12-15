@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:rumah_vokasi/core/app_button_style.dart';
 import 'package:rumah_vokasi/core/app_color.dart';
 import 'package:rumah_vokasi/core/app_form_style.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
-import 'package:rumah_vokasi/utils/app_formater.dart';
+import 'package:rumah_vokasi/features/mains/models/user_profile_model.dart';
+import 'package:rumah_vokasi/features/mains/presentasions/home_page.dart';
+import 'package:rumah_vokasi/features/mains/services/user_profile_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PpProfilePage extends StatefulWidget {
   const PpProfilePage({super.key});
@@ -18,8 +20,100 @@ class _PpProfilePageState extends State<PpProfilePage> {
   final TextEditingController _nama = TextEditingController();
   final TextEditingController _email = TextEditingController();
   final TextEditingController _telepon = TextEditingController();
-  final TextEditingController _tanggalLahir = TextEditingController();
-  String? _jenisKelamin;
+  //final TextEditingController _tanggalLahir = TextEditingController();
+  //String? _jenisKelamin;
+  String? token;
+  String? userID;
+
+  ProfileData? profile;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserFromSP();
+  }
+
+  Future<void> loadUserFromSP() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      token = prefs.getString("access_token");
+      userID = prefs.getString("user_id");
+    });
+    if (token != null && userID != null) {
+      loadData(token!, userID!);
+    }
+  }
+
+  Future<void> loadData(String token, String userID) async {
+    final response = await UserProfileService().getProfile(token, userID);
+    setState(() {
+      profile = response;
+      _bio.text = profile?.bio ?? "";
+      _nama.text = profile?.name ?? "";
+      _email.text = profile?.email ?? "";
+      _telepon.text = profile?.phone ?? "";
+    });
+  }
+
+  Future<void> updateProfile(
+    String userID,
+    String name,
+    String email,
+    String profilePicture,
+    String bio,
+    String phone,
+    String address,
+    String experience,
+    String specialist,
+    String document,
+    String token,
+  ) async {
+    try {
+      final response = await UserProfileService().updateProfile(
+        userID: userID,
+        name: name,
+        email: email,
+        profilePicture: profilePicture,
+        bio: bio,
+        phone: phone,
+        address: address,
+        experience: experience,
+        specialist: specialist,
+        document: document,
+        token: token,
+      );
+
+      if (!mounted) return;
+
+      if (response) {
+        updateSP(name, email);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomePage(index: 2)),
+        );
+      } else {
+        debugPrint("Somethings Wrong");
+      }
+    } catch (e) {
+      debugPrint("Error $e");
+    }
+  }
+
+  Future<void> submitSave() async {
+    String name = _nama.text.trim();
+    String email = _email.text.trim();
+    String bio = _bio.text.trim();
+    String phone = _telepon.text.trim();
+
+    updateProfile(userID!, name, email, "", bio, phone, "", "", "", "", token!);
+  }
+
+  Future<void> updateSP(String name, String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("name", name);
+    await prefs.setString("email", email);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,217 +136,226 @@ class _PpProfilePageState extends State<PpProfilePage> {
         child: ListView(
           shrinkWrap: true,
           children: [
-            const SizedBox(height: 10),
-            Align(
-              alignment: AlignmentGeometry.topCenter,
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                elevation: 1,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(40, 10, 40, 20),
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        width: 100,
-                        height: 100,
-                        child: Stack(
-                          children: [
-                            Container(
-                              clipBehavior: Clip.hardEdge,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(80),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey,
-                                    blurRadius: 5.0,
-                                    offset: Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: Image.asset(
-                                'assets/images/eula-slide-1.png',
-                                height: 90,
-                              ),
-                            ),
-                            Positioned(
-                              right: 4,
-                              bottom: 4,
-                              child: Container(
-                                padding: EdgeInsets.all(6),
+            if (profile == null) ...[
+              const Center(child: CircularProgressIndicator()),
+            ] else ...[
+              const SizedBox(height: 10),
+              Align(
+                alignment: AlignmentGeometry.topCenter,
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  elevation: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(40, 10, 40, 20),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          height: 100,
+                          child: Stack(
+                            children: [
+                              Container(
+                                clipBehavior: Clip.hardEdge,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  color: AppColor.primaryDarkBlue4,
-                                ),
-                                child: Icon(
-                                  Icons.camera_alt,
                                   color: Colors.white,
-                                  size: 20,
+                                  borderRadius: BorderRadius.circular(80),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey,
+                                      blurRadius: 5.0,
+                                      offset: Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: Image.asset(
+                                  'assets/images/eula-slide-1.png',
+                                  height: 90,
                                 ),
                               ),
-                            ),
-                          ],
+                              Positioned(
+                                right: 4,
+                                bottom: 4,
+                                child: Container(
+                                  padding: EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    color: AppColor.primaryDarkBlue4,
+                                  ),
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      Text(
-                        "Manusia Bumi Setengah Alien",
-                        textAlign: TextAlign.center,
-                        style: AppTextStyle.popins18.copyWith(
-                          fontWeight: FontWeight.w800,
+                        Text(
+                          profile!.name,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyle.popins18.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                      Text(
-                        "setAliensetManusia@gmail.com",
-                        textAlign: TextAlign.center,
-                        style: AppTextStyle.popins16.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: AppColor.textGrey,
+                        Text(
+                          profile!.email,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyle.popins16.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: AppColor.textGrey,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            Container(
-              margin: EdgeInsets.all(25),
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.shade200, width: 2),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Bio",
-                    style: AppTextStyle.popins16.copyWith(
-                      fontWeight: FontWeight.w600,
+              Container(
+                margin: EdgeInsets.all(25),
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade200, width: 2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Bio",
+                      style: AppTextStyle.popins16.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    height: 100,
-                    width: double.infinity,
-                    child: TextFormField(
-                      expands: true, 
-                      maxLines: null, 
-                      minLines: null,
-                      textAlignVertical: TextAlignVertical.top,
-                      controller: _bio,
-                      decoration: AppFormStyle.updateField(hint: '').copyWith(
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 14,
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      height: 100,
+                      width: double.infinity,
+                      child: TextFormField(
+                        expands: true,
+                        maxLines: null,
+                        minLines: null,
+                        textAlignVertical: TextAlignVertical.top,
+                        controller: _bio,
+                        decoration: AppFormStyle.updateField(hint: '').copyWith(
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 14,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Nama",
-                    style: AppTextStyle.popins16.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  TextFormField(
-                    decoration: AppFormStyle.updateField(hint: ''),
-                    controller: _nama,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Email",
-                    style: AppTextStyle.popins16.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  TextFormField(
-                    decoration: AppFormStyle.updateField(hint: ''),
-                    controller: _email,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Telepon",
-                    style: AppTextStyle.popins16.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  TextFormField(
-                    decoration: AppFormStyle.updateField(hint: ''),
-                    controller: _telepon,
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Tanggal Lahir",
-                    style: AppTextStyle.popins16.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  TextFormField(
-                    decoration: AppFormStyle.updateField(hint: 'dd/mm/yyyy'),
-                    controller: _tanggalLahir,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(8),
-                      AppFormater.dateTextFormatter,
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Tanggal Lahir",
-                    style: AppTextStyle.popins16.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  DropdownButtonFormField<String>(
-                    initialValue: _jenisKelamin,
-                    decoration: AppFormStyle.dropdownField(
-                      hint: "Jenis Kelamin",
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: "Laki-laki",
-                        child: Text("Laki-laki"),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Nama",
+                      style: AppTextStyle.popins16.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      DropdownMenuItem(
-                        value: "Perempuan",
-                        child: Text("Perempuan"),
+                    ),
+                    const SizedBox(height: 4),
+                    TextFormField(
+                      decoration: AppFormStyle.updateField(hint: ''),
+                      controller: _nama,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Email",
+                      style: AppTextStyle.popins16.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _jenisKelamin = value;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Jenis Kelamin wajib diisi!';
-                      } else {
-                        return null;
-                      }
-                    },
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 4),
+                    TextFormField(
+                      decoration: AppFormStyle.updateField(hint: ''),
+                      controller: _email,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Telepon",
+                      style: AppTextStyle.popins16.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    TextFormField(
+                      decoration: AppFormStyle.updateField(hint: ''),
+                      controller: _telepon,
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 8),
+                    //
+                    /*
+                    Text(
+                      "Tanggal Lahir",
+                      style: AppTextStyle.popins16.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    TextFormField(
+                      decoration: AppFormStyle.updateField(hint: 'dd/mm/yyyy'),
+                      controller: _tanggalLahir,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(8),
+                        AppFormater.dateTextFormatter,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Tanggal Lahir",
+                      style: AppTextStyle.popins16.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    DropdownButtonFormField<String>(
+                      initialValue: _jenisKelamin,
+                      decoration: AppFormStyle.dropdownField(
+                        hint: "Jenis Kelamin",
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: "Laki-laki",
+                          child: Text("Laki-laki"),
+                        ),
+                        DropdownMenuItem(
+                          value: "Perempuan",
+                          child: Text("Perempuan"),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _jenisKelamin = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Jenis Kelamin wajib diisi!';
+                        } else {
+                          return null;
+                        }
+                      },
+                    ),*/
+                    //
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
       bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(30, 10, 30, 50),
+        padding: EdgeInsets.fromLTRB(30, 10, 30, 30),
         child: ElevatedButton(
           style: AppButtonStyle.primaryButton,
-          onPressed: () {},
+          onPressed: () {
+            submitSave();
+          },
           child: Text(
             "Simpan & Ubah",
             style: AppTextStyle.popins18.copyWith(
