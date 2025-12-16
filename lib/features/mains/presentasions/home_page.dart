@@ -31,7 +31,10 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_indexPages],
+      body: IndexedStack(
+        index: _indexPages,
+        children: _pages,
+      ),
       bottomNavigationBar: Stack(
         alignment: Alignment.bottomCenter,
         children: [

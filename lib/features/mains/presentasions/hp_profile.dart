@@ -12,6 +12,7 @@ import 'package:rumah_vokasi/features/mains/presentasions/pp_certificate.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_changepw_page.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_history_page.dart';
 import 'package:rumah_vokasi/features/mains/presentasions/pp_profile_page.dart';
+import 'package:rumah_vokasi/features/mains/services/image_cache_service.dart';
 import 'package:rumah_vokasi/features/mains/services/user_profile_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
@@ -143,7 +144,9 @@ class _HpProfileState extends State<HpProfile> {
       showConfirmBtn: true,
       onConfirmBtnTap: () async {
         final prefs = await SharedPreferences.getInstance();
+        final ImageCacheService imageCache = ImageCacheService();
         await prefs.clear();
+        await imageCache.clear();
         if (!mounted) return;
         Navigator.pushReplacement(
           context,

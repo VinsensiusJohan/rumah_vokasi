@@ -103,6 +103,31 @@ class CourseItem {
       bidangTitle: json['bidang_title'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+  return {
+    'id': id,
+    'title': title,
+    'description': description,
+    'price': price,
+    'image': image,
+    'video_url': videoUrl,
+    'instructor_id': instructorId,
+    'status': status,
+    'instructor_name': instructorName,
+    'sub_bag_id': subBagId,
+    'sub_bag_title': subBagTitle,
+    'sub_id': subId,
+    'sub_title': subTitle,
+    'kompetensi_id': kompetensiId,
+    'kompetensi_title': kompetensiTitle,
+    'program_id': programId,
+    'program_title': programTitle,
+    'bidang_id': bidangId,
+    'bidang_title': bidangTitle,
+  };
+}
+
 }
 
 class Pagination {
