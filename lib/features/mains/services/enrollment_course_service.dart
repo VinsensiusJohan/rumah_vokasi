@@ -87,4 +87,25 @@ class EnrollmentCourseService {
       return null;
     }
   }
+
+  Future<bool> addEnrollment(String courseId, String token) async {
+    final url = Uri.parse("$baseUrl/enrollment");
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"course_id": courseId}),
+      );
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (_) {
+      return false;
+    }
+  }
 }

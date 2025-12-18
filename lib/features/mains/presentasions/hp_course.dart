@@ -31,6 +31,16 @@ class _HpPacketState extends State<HpPacket> {
 
   bool isLoading = false;
 
+  Future<void> _onRefresh() async {
+  if (token == null || userId == null) return;
+
+  setState(() {
+    isLoading = true;
+  });
+
+  await loadData(token!, userId!);
+}
+
   Future<void> loadUserFromSP() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
@@ -75,296 +85,300 @@ class _HpPacketState extends State<HpPacket> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 30, 20, 10),
-          child: ListView(
-            children: [
-              Align(
-                alignment: Alignment.center,
-                child: Text("Kursus Saya", style: AppTextStyle.popins20wBold),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _search,
-                decoration: AppFormStyle.searchField(
-                  icon: Icons.search,
-                  hint: 'Cari',
+          child: RefreshIndicator(
+            onRefresh: _onRefresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: Text("Kursus Saya", style: AppTextStyle.popins20wBold),
                 ),
-              ),
-              const SizedBox(height: 10),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildCategoryButton(
-                      0,
-                      'assets/icons/triple-box.svg',
-                      "Semua",
-                      'all',
-                    ),
-                    const SizedBox(width: 10),
-                    _buildCategoryButton(
-                      1,
-                      'assets/icons/fire.svg',
-                      "Progress",
-                      'onProgress',
-                    ),
-                    const SizedBox(width: 10),
-                    _buildCategoryButton(
-                      2,
-                      'assets/icons/trophy.svg',
-                      "Selesai",
-                      'completed',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Aktivitas Terbaru',
-                style: AppTextStyle.popins18.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 10),
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  padding: EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.grey.shade300, width: 2),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _search,
+                  decoration: AppFormStyle.searchField(
+                    icon: Icons.search,
+                    hint: 'Cari',
                   ),
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  clipBehavior: Clip.none,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Sabtu, 30 Oktober 2025',
-                        style: AppTextStyle.popins12wBold.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      _buildCategoryButton(
+                        0,
+                        'assets/icons/triple-box.svg',
+                        "Semua",
+                        'all',
                       ),
-                      Icon(Icons.arrow_forward_ios_outlined, size: 20),
+                      const SizedBox(width: 10),
+                      _buildCategoryButton(
+                        1,
+                        'assets/icons/fire.svg',
+                        "Progress",
+                        'onProgress',
+                      ),
+                      const SizedBox(width: 10),
+                      _buildCategoryButton(
+                        2,
+                        'assets/icons/trophy.svg',
+                        "Selesai",
+                        'completed',
+                      ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Riyawat Pembelajaran',
-                style: AppTextStyle.popins18.copyWith(
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 10),
+                Text(
+                  'Aktivitas Terbaru',
+                  style: AppTextStyle.popins18.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: enrollment.length,
-                      itemBuilder: (context, index) {
-                        final enrollmentShow = enrollment[index];
-                        final List<String?> tags = [
-                          enrollmentShow.subBagTitle,
-                          enrollmentShow.subTitle,
-                          enrollmentShow.kompetensiTitle,
-                          enrollmentShow.programTitle,
-                          enrollmentShow.bidangTitle,
-                        ].where((e) => e != null && e.isNotEmpty).toList();
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => SectionPage(
-                                  courseID: enrollmentShow.courseId,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Card(
-                            margin: EdgeInsets.only(top: 8, bottom: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 3,
-                            child: Column(
-                              children: [
-                                Container(
-                                  margin: const EdgeInsets.only(bottom: 10),
-                                  child: Stack(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: const BorderRadius.only(
-                                          topLeft: Radius.circular(16),
-                                          topRight: Radius.circular(16),
-                                        ),
-                                        child: enrollmentShow.image.isEmpty
-                                            ? Image.asset(
-                                                'assets/nps/course-1.png',
-                                                width: double.infinity,
-                                                height: 150,
-                                                fit: BoxFit.cover,
-                                              )
-                                            : Image.memory(
-                                                base64Decode(
-                                                  enrollmentShow.image,
-                                                ),
-                                                width: double.infinity,
-                                                height: 150,
-                                                fit: BoxFit.cover,
-                                              ),
-                                      ),
-                                      Positioned(
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 3,
-                                            horizontal: 25,
-                                          ),
-                                          decoration: const BoxDecoration(
-                                            color: AppColor.primaryBlue,
-                                            borderRadius: BorderRadius.only(
-                                              topLeft: Radius.circular(16),
-                                              bottomRight: Radius.circular(24),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            "Gratis",
-                                            style: AppTextStyle.default16w6
-                                                .copyWith(color: Colors.white),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        right: 10,
-                                        bottom: 10,
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 5,
-                                            vertical: 5,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColor.tagBestSeller,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            "Best Seller!",
-                                            style: AppTextStyle.popins10w6
-                                                .copyWith(
-                                                  color:
-                                                      AppColor.textBestSeller,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    10,
-                                    0,
-                                    10,
-                                    10,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  enrollmentShow.courseTitle,
-                                                  style: AppTextStyle.popins18
-                                                      .copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w800,
-                                                      ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  maxLines: 1,
-                                                ),
-                                                Text(
-                                                  enrollmentShow.instructorName,
-                                                  style: AppTextStyle.popins14
-                                                      .copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        color:
-                                                            AppColor.textGrey,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      SingleChildScrollView(
-                                        scrollDirection: Axis.horizontal,
-                                        child: Row(
-                                          children: tags.asMap().entries.map((
-                                            entry,
-                                          ) {
-                                            final index = entry.key;
-                                            final tag = entry.value;
-
-                                            final colors = [
-                                              AppColor.primaryBlue,
-                                              AppColor.yellow,
-                                              AppColor.green,
-                                            ];
-
-                                            final color =
-                                                colors[index % colors.length];
-
-                                            return Container(
-                                              margin: const EdgeInsets.only(
-                                                right: 8,
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 6,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: color.withValues(
-                                                  alpha: 0.15,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: Text(
-                                                tag!,
-                                                style: AppTextStyle
-                                                    .popins12wBold
-                                                    .copyWith(
-                                                      color: color,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    padding: EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: Colors.grey.shade300, width: 2),
                     ),
-            ],
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Sabtu, 30 Oktober 2025',
+                          style: AppTextStyle.popins12wBold.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios_outlined, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Riyawat Pembelajaran',
+                  style: AppTextStyle.popins18.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: enrollment.length,
+                        itemBuilder: (context, index) {
+                          final enrollmentShow = enrollment[index];
+                          final List<String?> tags = [
+                            enrollmentShow.subBagTitle,
+                            enrollmentShow.subTitle,
+                            enrollmentShow.kompetensiTitle,
+                            enrollmentShow.programTitle,
+                            enrollmentShow.bidangTitle,
+                          ].where((e) => e != null && e.isNotEmpty).toList();
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SectionPage(
+                                    courseID: enrollmentShow.courseId,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Card(
+                              margin: EdgeInsets.only(top: 8, bottom: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 3,
+                              child: Column(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    child: Stack(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(16),
+                                            topRight: Radius.circular(16),
+                                          ),
+                                          child: enrollmentShow.image.isEmpty
+                                              ? Image.asset(
+                                                  'assets/nps/course-1.png',
+                                                  width: double.infinity,
+                                                  height: 150,
+                                                  fit: BoxFit.cover,
+                                                )
+                                              : Image.memory(
+                                                  base64Decode(
+                                                    enrollmentShow.image,
+                                                  ),
+                                                  width: double.infinity,
+                                                  height: 150,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                        ),
+                                        Positioned(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 3,
+                                              horizontal: 25,
+                                            ),
+                                            decoration: const BoxDecoration(
+                                              color: AppColor.primaryBlue,
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(16),
+                                                bottomRight: Radius.circular(24),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              "Gratis",
+                                              style: AppTextStyle.default16w6
+                                                  .copyWith(color: Colors.white),
+                                            ),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          right: 10,
+                                          bottom: 10,
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 5,
+                                              vertical: 5,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppColor.tagBestSeller,
+                                              borderRadius: BorderRadius.circular(
+                                                8,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              "Best Seller!",
+                                              style: AppTextStyle.popins10w6
+                                                  .copyWith(
+                                                    color:
+                                                        AppColor.textBestSeller,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      10,
+                                      0,
+                                      10,
+                                      10,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    enrollmentShow.courseTitle,
+                                                    style: AppTextStyle.popins18
+                                                        .copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                        ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                  ),
+                                                  Text(
+                                                    enrollmentShow.instructorName,
+                                                    style: AppTextStyle.popins14
+                                                        .copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w400,
+                                                          color:
+                                                              AppColor.textGrey,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(
+                                            children: tags.asMap().entries.map((
+                                              entry,
+                                            ) {
+                                              final index = entry.key;
+                                              final tag = entry.value;
+            
+                                              final colors = [
+                                                AppColor.primaryBlue,
+                                                AppColor.yellow,
+                                                AppColor.green,
+                                              ];
+            
+                                              final color =
+                                                  colors[index % colors.length];
+            
+                                              return Container(
+                                                margin: const EdgeInsets.only(
+                                                  right: 8,
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 6,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: color.withValues(
+                                                    alpha: 0.15,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: Text(
+                                                  tag!,
+                                                  style: AppTextStyle
+                                                      .popins12wBold
+                                                      .copyWith(
+                                                        color: color,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ],
+            ),
           ),
         ),
       ),

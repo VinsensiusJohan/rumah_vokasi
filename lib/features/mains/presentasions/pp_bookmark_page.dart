@@ -6,6 +6,7 @@ import 'package:rumah_vokasi/core/app_form_style.dart';
 import 'package:rumah_vokasi/core/app_text_style.dart';
 import 'package:rumah_vokasi/features/mains/models/bookmark_model.dart';
 import 'package:rumah_vokasi/features/mains/services/bookmark_service.dart';
+import 'package:rumah_vokasi/features/mains/services/enrollment_course_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PpBookmarkPage extends StatefulWidget {
@@ -82,7 +83,6 @@ class _PpBookmarkPageState extends State<PpBookmarkPage> {
                   ? 2
                   : bookmarkedCourses.length + 1,
               itemBuilder: (context, index) {
-                // 👉 search bar pada index 0
                 if (index == 0) {
                   return Container(
                     padding: EdgeInsets.all(10),
@@ -140,24 +140,26 @@ class _PpBookmarkPageState extends State<PpBookmarkPage> {
                                     ),
                             ),
                             const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  course.title,
-                                  style: AppTextStyle.popins16.copyWith(
-                                    fontWeight: FontWeight.w600,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    course.title,
+                                    style: AppTextStyle.popins16.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                                Text(
-                                  course.description,
-                                  style: AppTextStyle.popins14,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ],
+                                  Text(
+                                    course.description,
+                                    style: AppTextStyle.popins14,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -171,7 +173,26 @@ class _PpBookmarkPageState extends State<PpBookmarkPage> {
                             Expanded(
                               child: ElevatedButton(
                                 style: AppButtonStyle.primaryButton,
-                                onPressed: () {},
+                                onPressed: () async {
+                                  final addEnrollment =
+                                      await EnrollmentCourseService()
+                                          .addEnrollment(
+                                            course.courseId,
+                                            token!,
+                                          );
+                                  final success = await BookmarkService()
+                                      .removeBookmark(
+                                        token!,
+                                        course.courseId,
+                                        userId!,
+                                      );
+
+                                  if (addEnrollment && success && mounted) {
+                                    setState(() {
+                                      bookmarkedCourses.removeAt(index - 1);
+                                    });
+                                  }
+                                },
                                 child: Text(
                                   'Gabung',
                                   style: AppTextStyle.inter18.copyWith(

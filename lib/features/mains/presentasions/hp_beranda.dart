@@ -19,9 +19,8 @@ class HpBeranda extends StatefulWidget {
   State<HpBeranda> createState() => _HpBerandaState();
 }
 
-class _HpBerandaState extends State<HpBeranda> 
-  with AutomaticKeepAliveClientMixin
- {
+class _HpBerandaState extends State<HpBeranda>
+    with AutomaticKeepAliveClientMixin {
   final TextEditingController _search = TextEditingController();
   final CarouselSliderController _carouselController =
       CarouselSliderController();
@@ -55,17 +54,15 @@ class _HpBerandaState extends State<HpBeranda>
   MemoryImage? profileImage;
 
   Future<void> preloadCourseImage() async {
-    for(final c in course){
-      if(c.image.isEmpty) continue;
+    for (final c in course) {
+      if (c.image.isEmpty) continue;
 
-      if(_courseImageMemory.containsKey(c.id)) continue;
-    
+      if (_courseImageMemory.containsKey(c.id)) continue;
+
       try {
         final bytes = base64Decode(c.image);
         _courseImageMemory[c.id] = MemoryImage(bytes);
-      } catch (_) {
-        
-      }
+      } catch (_) {}
     }
   }
 
@@ -508,15 +505,16 @@ Widget courseItem(
     child: Column(
       children: [
         ClipRRect(
-  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-  child: Image(
-    image: courseImageMemory[courseShow.id] ??
-        const AssetImage('assets/nps/course-1.png'),
-    height: 150,
-    width: double.infinity,
-    fit: BoxFit.cover,
-  ),
-),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: Image(
+            image:
+                courseImageMemory[courseShow.id] ??
+                const AssetImage('assets/nps/course-1.png'),
+            height: 150,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
           child: Column(
@@ -629,39 +627,3 @@ Widget courseItem(
     ),
   );
 }
-
-//SafeArea(
-//              top: false,
-//              child: ListView(
-//                children: [
-//                        const SizedBox(height: 3),
-//                        if (course.isEmpty) ...[
-//                          Center(
-//                            child: Text(
-//                              "Belum ada Enrollment",
-//                              style: AppTextStyle.default16w6.copyWith(
-//                                color: AppColor.primaryBlue,
-//                              ),
-//                            ),
-//                          ),
-//                        ] else ...[
-//                          ListView.builder(
-//                            shrinkWrap: true,
-//                            physics: const NeverScrollableScrollPhysics(),
-//                            itemCount: course.length,
-//                            itemBuilder: (context, index) {
-//                              final courseShow = course[index];
-//                              courseImage = course.map((c) {
-//                                if (c.image.isEmpty) return null;
-//                                return MemoryImage(base64Decode(c.image));
-//                              }).toList();
-//                              return 
-//                            },
-//                          ),
-//                        ],
-//                      ],
-//                    ),
-//                  ),
-//                ],
-//              ),
-//            ),
