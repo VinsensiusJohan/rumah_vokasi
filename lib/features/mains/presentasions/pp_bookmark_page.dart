@@ -174,24 +174,10 @@ class _PpBookmarkPageState extends State<PpBookmarkPage> {
                               child: ElevatedButton(
                                 style: AppButtonStyle.primaryButton,
                                 onPressed: () async {
-                                  final addEnrollment =
-                                      await EnrollmentCourseService()
-                                          .addEnrollment(
-                                            course.courseId,
-                                            token!,
-                                          );
-                                  final success = await BookmarkService()
-                                      .removeBookmark(
-                                        token!,
-                                        course.courseId,
-                                        userId!,
-                                      );
-
-                                  if (addEnrollment && success && mounted) {
-                                    setState(() {
-                                      bookmarkedCourses.removeAt(index - 1);
-                                    });
-                                  }
+                                  await EnrollmentCourseService().addEnrollment(
+                                    course.courseId,
+                                    token!,
+                                  );
                                 },
                                 child: Text(
                                   'Gabung',
@@ -203,10 +189,6 @@ class _PpBookmarkPageState extends State<PpBookmarkPage> {
                               ),
                             ),
                             const SizedBox(width: 10),
-
-                            // -------------------------
-                            // SOLUSI: HAPUS ITEM SECARA LOKAL TANPA LOAD ULANG API
-                            // -------------------------
                             Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),

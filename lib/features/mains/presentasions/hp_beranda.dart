@@ -33,7 +33,6 @@ class _HpBerandaState extends State<HpBeranda>
   List<CourseItem> course = [];
   Set<String> bookMarkID = {};
   late List<bool> isBookMarkList;
-  List<String> listBookMark = [];
 
   bool isRefreshing = false;
 
@@ -99,28 +98,24 @@ class _HpBerandaState extends State<HpBeranda>
 
   Future<void> loadData(String token, String userId) async {
     final prefs = await SharedPreferences.getInstance();
-
-    // 1️⃣ Load cache dulu (CEPAT)
     final cachedCourse = prefs.getString('cache_courses');
     if (cachedCourse != null) {
       final decoded = jsonDecode(cachedCourse) as List;
       course = decoded.map((e) => CourseItem.fromJson(e)).toList();
-      setState(() {}); // tampilkan langsung
+      setState(() {});
     }
 
-    // 2️⃣ Hit API (VALIDASI)
     final resultCourse = await EnrollmentCourseService().getCourse(token);
     final resultBookmark = await BookmarkService().getUserBookmarks(
       token,
       userId,
     );
 
-    // 3️⃣ Update cache jika berubah
-    listBookMark = resultBookmark;
+    bookmarkNotifier.value = resultBookmark.toSet();
+
     if (jsonEncode(course) != jsonEncode(resultCourse)) {
       course = resultCourse;
-
-      prefs.setString(
+      await prefs.setString(
         'cache_courses',
         jsonEncode(resultCourse.map((e) => e.toJson()).toList()),
       );
@@ -147,7 +142,7 @@ class _HpBerandaState extends State<HpBeranda>
     super.initState();
     isLoading = true;
     loadUserFromSP();
-    bookmarkNotifier = ValueNotifier<Set<String>>(listBookMark.toSet());
+    bookmarkNotifier = ValueNotifier<Set<String>>({});
   }
 
   @override
@@ -563,19 +558,18 @@ Widget courseItem(
                               userId,
                             );
 
-                            // update notifier tanpa rebuild widget lain
-                            bookmarkNotifier.value = {
-                              ...bookmarks..remove(courseShow.id),
-                            };
+                            final newSet = Set<String>.from(bookmarks);
+                            newSet.remove(courseShow.id);
+                            bookmarkNotifier.value = newSet;
                           } else {
                             await BookmarkService().addBookmark(
                               token,
                               courseShow.id,
                             );
 
-                            bookmarkNotifier.value = {
-                              ...bookmarks..add(courseShow.id),
-                            };
+                            final newSet = Set<String>.from(bookmarks);
+                            newSet.add(courseShow.id);
+                            bookmarkNotifier.value = newSet;
                           }
                         },
                       );

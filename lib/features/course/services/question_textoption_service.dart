@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:rumah_vokasi/features/course/models/question_option_model.dart';
+import 'package:rumah_vokasi/features/course/models/quiz_info_model.dart';
 
 class QuizQuestionService {
   final String baseUrl =

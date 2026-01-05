@@ -1,8 +1,10 @@
 import 'package:rumah_vokasi/features/course/models/lesson_option_model.dart';
+import 'package:rumah_vokasi/features/course/models/question_text_model.dart';
+import 'package:rumah_vokasi/features/course/models/quiz_info_model.dart';
 import 'package:rumah_vokasi/features/mains/models/certificate_model.dart';
 import 'package:rumah_vokasi/features/mains/models/payment_history_model.dart';
 
-//dummy
+//Payment History
 final List<PaymentHistory> histories = [
   PaymentHistory(
     tanggal: '29-10-2025',
@@ -131,3 +133,28 @@ List<LessonOption> optLesson = [
     title: 'Dasar Robotic Akhir'
     ),
   ];
+
+//Quiz Page
+final dummyQuizInfo = QuizInfo(
+  id: "quiz_preview",
+  lessonId: "lesson_preview",
+  title: "Preview Kuis Isian",
+  description: "Ini hanya untuk cek tampilan kuis isian",
+  passingGrade: "75",
+  durationMinutes: "30",
+  answerType: "TEXT",
+);
+
+final dummyEssayQuestions = [
+  EssayQuestion(
+    questionId: "q1",
+    questionText: "Jelaskan apa itu StatefulWidget di Flutter!",
+    questionOrder: "1",
+  ),
+  EssayQuestion(
+    questionId: "q2",
+    questionText: "Apa perbedaan StatelessWidget dan StatefulWidget?",
+    questionOrder: "2",
+  ),
+];
+
